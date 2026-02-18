@@ -10,6 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['user_name'] ?? 'Pet Lover';
+$user_pic = $_SESSION['profile_pic'] ?? 'images/default_user.png';
 
 $success = "";
 $error = "";
@@ -26,41 +27,56 @@ try {
     }
 }
 
-// Handle Booking
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_booking'])) {
-    $pet_name = $_POST['pet_name'] ?? 'Pet';
-    $breed = $_POST['breed'] ?? 'Unknown';
-    $service_type = $_POST['service_type'] ?? 'General';
-    $date = $_POST['appointment_date'];
-    $time = $_POST['appointment_time'];
-    $hospital_id = $_POST['hospital_id'];
-    $payment_id = $_POST['razorpay_payment_id'] ?? '';
+// Handle Actions (Cancel Appointment)
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (isset($_POST['cancel_appointment'])) {
+        $appt_id = $_POST['appointment_id'];
+        // Cancel appointment safely
+        $stmt = $pdo->prepare("UPDATE appointments SET status = 'cancelled' WHERE id = ? AND user_id = ?");
+        if ($stmt->execute([$appt_id, $user_id])) {
+            $success = "Appointment cancelled successfully.";
+        } else {
+            $error = "Failed to cancel appointment.";
+        }
+        // Redirect to avoid resubmission
+        header("Location: schedule.php?msg=cancelled");
+        exit();
+    } elseif (isset($_POST['confirm_booking'])) {
+        // Handle Booking
+        $pet_name = $_POST['pet_name'] ?? 'Pet';
+        $breed = $_POST['breed'] ?? 'Unknown';
+        $service_type = $_POST['service_type'] ?? 'General';
+        $date = $_POST['appointment_date'];
+        $time = $_POST['appointment_time'];
+        $hospital_id = $_POST['hospital_id'];
+        $payment_id = $_POST['razorpay_payment_id'] ?? '';
 
-    if (empty($payment_id)) {
-        $error = "Payment configuration error or session timeout.";
-    } else {
-        // Security: Re-fetch price from DB to prevent tampering
-        $priceStmt = $pdo->prepare("SELECT price FROM hospital_services WHERE hospital_id = ? AND service_name = ?");
-        $priceStmt->execute([$hospital_id, $service_type]);
-        $priceRow = $priceStmt->fetch();
+        if (empty($payment_id)) {
+            $error = "Payment configuration error or session timeout.";
+        } else {
+            // Security: Re-fetch price from DB to prevent tampering
+            $priceStmt = $pdo->prepare("SELECT price FROM hospital_services WHERE hospital_id = ? AND service_name = ?");
+            $priceStmt->execute([$hospital_id, $service_type]);
+            $priceRow = $priceStmt->fetch();
 
-        $cost = $priceRow ? $priceRow['price'] : 0;
+            $cost = $priceRow ? $priceRow['price'] : 0;
 
-        try {
-            // Insert with hospital_id
-            $stmt = $pdo->prepare("
-                INSERT INTO appointments 
-                (user_id, payment_id, hospital_id, pet_name, breed, service_type, title, appointment_date, appointment_time, description, cost, status) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
-            ");
+            try {
+                // Insert with hospital_id
+                $stmt = $pdo->prepare("
+                    INSERT INTO appointments 
+                    (user_id, payment_id, hospital_id, pet_name, breed, service_type, title, appointment_date, appointment_time, description, cost, status) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
+                ");
 
-            $title = $service_type . " for " . $pet_name;
+                $title = $service_type . " for " . $pet_name;
 
-            if ($stmt->execute([$user_id, $payment_id, $hospital_id, $pet_name, $breed, $service_type, $title, $date, $time, "Scheduled Appointment", $cost])) {
-                $success = "Booking confirmed for " . $pet_name . "! ✨";
+                if ($stmt->execute([$user_id, $payment_id, $hospital_id, $pet_name, $breed, $service_type, $title, $date, $time, "Scheduled Appointment", $cost])) {
+                    $success = "Booking confirmed for " . $pet_name . "! ✨";
+                }
+            } catch (PDOException $e) {
+                $error = "Booking failed: " . $e->getMessage();
             }
-        } catch (PDOException $e) {
-            $error = "Booking failed: " . $e->getMessage();
         }
     }
 }
@@ -69,6 +85,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_booking'])) {
 $petsStmt = $pdo->prepare("SELECT * FROM user_pets WHERE user_id = ?");
 $petsStmt->execute([$user_id]);
 $allPets = $petsStmt->fetchAll();
+
+// Fetch ALL upcoming appointments
+$apptStmt = $pdo->prepare("
+    SELECT a.*, h.name as hospital_name, h.image_url as hospital_image
+    FROM appointments a 
+    LEFT JOIN hospitals h ON a.hospital_id = h.id 
+    WHERE a.user_id = ? AND a.status != 'cancelled' 
+    ORDER BY a.appointment_date ASC, a.appointment_time ASC
+");
+$apptStmt->execute([$user_id]);
+$appointments = $apptStmt->fetchAll();
+
+// Calculate stats
+$upcomingCount = 0;
+foreach ($appointments as $a) {
+    if (strtotime($a['appointment_date']) >= strtotime('today'))
+        $upcomingCount++;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -76,207 +110,37 @@ $allPets = $petsStmt->fetchAll();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schedule Appointment - PetCloud</title>
+    <title>Schedule - PetCloud</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
         rel="stylesheet">
+
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Dashboard CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+
     <style>
-        :root {
-            --primary: #0f172a;
-            --accent: #3b82f6;
-            --bg: #f8fafc;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: #1e293b;
-        }
-
-        .navbar {
-            background: white;
-            padding: 1.25rem 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #e2e8f0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            color: var(--accent);
-            font-size: 1.5rem;
-            font-weight: 700;
-            font-family: 'Outfit';
-            text-decoration: none;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2.5rem;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: #64748b;
-            font-weight: 500;
-            font-size: 0.95rem;
-            transition: 0.2s;
-        }
-
-        .nav-links a:hover {
-            color: var(--accent);
-        }
-
-        .nav-auth {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .btn-account {
-            background: var(--primary);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        .main-container {
-            max-width: 1300px;
-            margin: 3rem auto;
+        /* Specific Styles for Schedule Page */
+        .schedule-container {
             display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
-            gap: 4rem;
-            padding: 0 5%;
+            gap: 2rem;
         }
 
-        /* Left Side */
-        .hero-section {
-            padding-top: 2rem;
-        }
-
-        .accepting-badge {
-            background: #eff6ff;
-            color: #3b82f6;
-            padding: 0.5rem 1rem;
-            border-radius: 2rem;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .accepting-badge::before {
-            content: '';
-            width: 8px;
-            height: 8px;
-            background: #3b82f6;
-            border-radius: 50%;
-        }
-
-        .hero-title {
-            font-family: 'Outfit';
-            font-size: 3.5rem;
-            color: var(--primary);
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-        }
-
-        .hero-title span {
-            color: var(--accent);
-        }
-
-        .hero-subtitle {
-            color: #64748b;
-            font-size: 1.15rem;
-            line-height: 1.6;
-            margin-bottom: 3rem;
-            max-width: 90%;
-        }
-
-        .hero-img-card {
+        .booking-form-wrapper {
             background: white;
-            border-radius: 2rem;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
-            position: relative;
-            margin-bottom: 2.5rem;
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+            border: 1px solid #e2e8f0;
         }
 
-        .hero-img {
-            width: 100%;
-            height: 400px;
-            object-fit: cover;
-            display: block;
-        }
-
-
-
-        .trust-badges {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .trust-badge {
-            background: white;
-            padding: 1rem 1.5rem;
-            border-radius: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: #334155;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
-            flex: 1;
-        }
-
-        .trust-badge i {
-            color: #10b981;
-            font-size: 1.25rem;
-        }
-
-        /* Right Side: Form Card */
-        .form-card {
-            background: white;
-            border-radius: 2.5rem;
-            padding: 3rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
-            border: 1px solid #f1f5f9;
-        }
-
-        .form-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .form-header h2 {
-            font-family: 'Outfit';
-            font-size: 1.75rem;
-            color: var(--primary);
-        }
-
+        /* Reusing styles from previous schedule.php but scoped */
         .step-badge {
             background: #f1f5f9;
             color: #64748b;
@@ -287,6 +151,7 @@ $allPets = $petsStmt->fetchAll();
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            margin-left: auto;
         }
 
         .step-dot {
@@ -309,61 +174,29 @@ $allPets = $petsStmt->fetchAll();
             margin-top: 2rem;
         }
 
-        .input-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #334155;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.85rem 1.25rem;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 1rem;
-            font-size: 0.95rem;
-            outline: none;
-            transition: 0.2s;
-        }
-
-        .form-control:focus {
-            border-color: var(--accent);
-            background: white;
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-        }
-
-        /* Service Cards */
         .service-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 1rem;
         }
 
         .service-option {
             border: 1px solid #e2e8f0;
-            border-radius: 1.25rem;
-            padding: 1.5rem 1rem;
+            border-radius: 1rem;
+            padding: 1.25rem 1rem;
             text-align: center;
             cursor: pointer;
-            transition: 0.3s;
+            transition: 0.2s;
             background: white;
         }
 
         .service-option:hover {
-            border-color: var(--accent);
+            border-color: #3b82f6;
             background: #f8fafc;
         }
 
         .service-option.active {
-            border: 2.5px solid var(--accent);
+            border: 2px solid #3b82f6;
             background: #eff6ff;
         }
 
@@ -375,7 +208,7 @@ $allPets = $petsStmt->fetchAll();
         }
 
         .service-option.active i {
-            color: var(--accent);
+            color: #3b82f6;
         }
 
         .service-name {
@@ -384,79 +217,10 @@ $allPets = $petsStmt->fetchAll();
             color: #475569;
         }
 
-        /* Custom Calendar (Simplified for UI) */
-        .calendar-wrap {
-            background: #f8fafc;
-            border-radius: 1.5rem;
-            padding: 1.5rem;
-            border: 1px solid #e2e8f0;
-        }
-
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .calendar-title {
-            font-weight: 700;
-            font-size: 1rem;
-        }
-
-        .calendar-nav {
-            display: flex;
-            gap: 1rem;
-            color: #64748b;
-            cursor: pointer;
-        }
-
-        .calendar-days {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 0.5rem;
-            text-align: center;
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: #94a3b8;
-            margin-bottom: 1rem;
-        }
-
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 0.5rem;
-            text-align: center;
-        }
-
-        .day {
-            padding: 0.6rem;
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            border-radius: 0.75rem;
-        }
-
-        .day:hover {
-            background: #e2e8f0;
-        }
-
-        .day.selected {
-            background: var(--accent);
-            color: white;
-            font-weight: 700;
-        }
-
-        .day.muted {
-            color: transparent;
-            cursor: default;
-        }
-
-        /* Time Slots */
         .time-panel {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.75rem;
         }
 
         .time-slot {
@@ -472,98 +236,22 @@ $allPets = $petsStmt->fetchAll();
         }
 
         .time-slot:hover {
-            border-color: var(--accent);
+            border-color: #3b82f6;
         }
 
         .time-slot.active {
-            border: 2px solid var(--accent);
+            border: 2px solid #3b82f6;
             background: #eff6ff;
-            color: var(--accent);
+            color: #3b82f6;
         }
 
         .time-slot.disabled {
-            opacity: 0.3;
+            opacity: 0.5;
+            pointer-events: none;
             background: #f1f5f9;
-            cursor: not-allowed;
         }
 
-        .info-box {
-            background: #eff6ff;
-            padding: 1rem;
-            border-radius: 1rem;
-            margin-top: 1.5rem;
-            display: flex;
-            gap: 0.75rem;
-            font-size: 0.8rem;
-            color: #1e3a8a;
-            line-height: 1.5;
-        }
-
-        .info-box i {
-            color: var(--accent);
-            margin-top: 2px;
-        }
-
-        .form-footer {
-            margin-top: 2.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .total-box span {
-            display: block;
-            font-size: 0.75rem;
-            color: #64748b;
-            font-weight: 600;
-        }
-
-        .total-price {
-            font-size: 1.5rem;
-            font-weight: 700;
-            font-family: 'Outfit';
-            color: var(--primary);
-        }
-
-        .btn-confirm {
-            background: var(--primary);
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 1rem;
-            border: none;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            transition: 0.3s;
-        }
-
-        .btn-confirm:hover {
-            background: #000;
-            transform: translateY(-2px);
-        }
-
-        .page-footer {
-            margin-top: 5rem;
-            padding: 2.5rem 0;
-            border-top: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: center;
-            gap: 3rem;
-            color: #94a3b8;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .footer-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        /* Success Message Overlay */
+        /* Overlay */
         .overlay {
             position: fixed;
             top: 0;
@@ -572,7 +260,7 @@ $allPets = $petsStmt->fetchAll();
             height: 100%;
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(5px);
-            z-index: 1000;
+            z-index: 2000;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -581,166 +269,261 @@ $allPets = $petsStmt->fetchAll();
     </style>
 </head>
 
-<body>
+<body class="dashboard-page">
 
     <?php if ($success): ?>
-        <div class="overlay" onclick="this.remove()">
+        <div class="overlay" onclick="window.location.href='schedule.php'">
             <div>
                 <div
                     style="width: 80px; height: 80px; background: #dcfce7; color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 2rem; font-size: 2rem;">
                     <i class="fa-solid fa-check"></i>
                 </div>
-                <h1 style="font-family:'Outfit'; margin-bottom: 1rem;">Appointment Confirmed!</h1>
+                <h1 style="font-family:'Outfit'; margin-bottom: 1rem;">Confirmed!</h1>
                 <p style="color: #64748b; margin-bottom: 2rem;"><?php echo $success; ?></p>
-                <a href="dashboard.php" class="btn-account">Return to Dashboard</a>
+                <a href="schedule.php" class="btn"
+                    style="background:var(--primary); color:white; padding:0.75rem 1.5rem; border-radius:1rem; text-decoration:none;">View
+                    Schedule</a>
             </div>
         </div>
     <?php endif; ?>
 
-    <nav class="navbar">
-        <a href="dashboard.php" class="logo">
-            <img src="images/logo.png" alt="PetCloud Logo" style="height: 60px; width: auto; object-fit: contain;">
-        </a>
-        <div class="nav-links">
-            <a href="dashboard.php">Home</a>
-            <a href="marketplace.php">Services</a>
-            <a href="adoption.php">Adoption</a>
-            <a href="health-records.php">Health</a>
-        </div>
-        <div class="nav-auth">
-            <a href="logout.php"
-                style="text-decoration:none; color:#ef4444; font-weight:600; font-size:0.9rem;">Logout</a>
-            <a href="dashboard.php" class="btn-account">My Dashboard</a>
-        </div>
-    </nav>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <?php include 'user-sidebar.php'; ?>
 
-    <main class="main-container">
-        <!-- Left Column -->
-        <section class="hero-section">
-            <div class="accepting-badge">Accepting New Patients</div>
-            <h1 class="hero-title">Expert care for your <span>furry family.</span></h1>
-            <p class="hero-subtitle">Book a verified professional for grooming, checkups, or daycare in less than 2
-                minutes. We treat them like our own.</p>
-
-            <div class="hero-img-card">
-                <img src="https://images.unsplash.com/photo-1552053831-71594a27632d?w=1200" class="hero-img"
-                    alt="Dogs running">
-
-            </div>
-
-            <div class="trust-badges">
-                <div class="trust-badge"><i class="fa-solid fa-circle-check"></i> Certified Vets</div>
-                <div class="trust-badge"><i class="fa-solid fa-clock"></i> 24/7 Support</div>
-            </div>
-        </section>
-
-
-        <!-- Right Column -->
-        <section class="appointment-form">
-            <div class="form-card">
-                <div class="form-header">
-                    <h2>Schedule Appointment</h2>
-                    <div class="step-badge" id="stepBadge">
-                        <div class="step-dot"></div> Step 1: Details
-                    </div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="top-header">
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Search appointments...">
                 </div>
+                <div class="header-actions">
+                    <a href="mypets.php" class="btn"
+                        style="background: #4b5e71; color: white; padding: 0.75rem 1.75rem; border-radius: 0.75rem; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px; text-decoration:none;">
+                        ADD A PET
+                    </a>
+                </div>
+            </header>
 
-                <form method="POST" id="bookingForm">
-                    <input type="hidden" name="hospital_id" id="hospitalIdInput">
-                    <input type="hidden" name="service_price" id="priceInput">
+            <div class="content-wrapper">
+                <div class="schedule-container">
 
-                    <!-- STEP 1: Pet & Service -->
-                    <div id="step1">
-                        <div class="section-label"><i class="fa-solid fa-paw"></i> Pet Details</div>
-                        <div class="input-row">
-                            <div class="form-group">
-                                <label>Pet Name</label>
-                                <input type="text" name="pet_name" id="petNameInput" class="form-control"
-                                    placeholder="e.g. Bella" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Breed</label>
-                                <select name="breed" class="form-control" required>
-                                    <option value="Dog">Dog</option>
-                                    <option value="Cat">Cat</option>
-                                    <option value="Bird">Bird</option>
-                                    <option value="Rabbit">Rabbit</option>
-                                </select>
-                            </div>
+                    <!-- 1. My Schedule List -->
+                    <div class="appointments-list-section">
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                            <h2 style="font-family:'Outfit'; font-size:1.5rem; color:#1e293b;">My Schedule</h2>
+                            <button
+                                onclick="document.getElementById('bookingSection').scrollIntoView({behavior: 'smooth'})"
+                                class="btn"
+                                style="background:var(--primary); color:white; padding:0.6rem 1.2rem; border-radius:0.75rem; font-weight:600; cursor:pointer; border:none;">
+                                <i class="fa-solid fa-plus"></i> New Appointment
+                            </button>
                         </div>
 
-                        <div class="section-label"><i class="fa-solid fa-layer-group"></i> Select Category</div>
-                        <div id="categoryGrid" class="service-grid">
-                            <!-- Populated dynamically by JS -->
-                            <div style="grid-column:1/-1; text-align:center; color:#94a3b8;">Loading categories...</div>
-                        </div>
-
-                        <div id="serviceSelectionSection" style="display:none; margin-top: 1.5rem;">
-                            <div class="section-label"><i class="fa-solid fa-briefcase-medical"></i> Select Specific
-                                Service</div>
-                            <div id="serviceListGrid" class="service-grid" style="grid-template-columns: 1fr 1fr;">
-                                <!-- Populated dynamically by JS -->
-                            </div>
-                        </div>
-
-                        <input type="hidden" name="service_type" id="serviceTypeInput" required>
-                        <div id="serviceError" style="color:red; font-size:0.8rem; margin-top:0.5rem; display:none;">
-                            Please select a service.</div>
-
-                        <!-- Hospital Selection Container -->
-                        <div id="hospitalSection" style="display:none; margin-top: 2rem;">
-                            <div class="section-label"><i class="fa-solid fa-hospital"></i> Select Clinic</div>
-                            <div id="hospitalGrid" style="display:grid; grid-template-columns:1fr; gap:1rem;">
-                                <!-- Populated by JS -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- STEP 2: Date & Time (Initially Hidden) -->
-                    <div id="step2" style="display:none; margin-top: 2rem;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem;">
-                            <div>
-                                <div class="section-label"><i class="fa-solid fa-calendar"></i> Select Date</div>
-                                <input type="date" name="appointment_date" id="dateInput" class="form-control"
-                                    style="font-family:inherit;" min="<?php echo date('Y-m-d'); ?>" required>
-                            </div>
-                            <div>
-                                <div class="section-label"><i class="fa-solid fa-clock"></i> Available Time</div>
-                                <div class="time-panel" id="timeSlotContainer">
-                                    <div style="grid-column: 1/-1; text-align:center; color:#94a3b8; padding:1rem;">
-                                        Select a date to view slots</div>
+                        <?php if (empty($appointments)): ?>
+                            <div
+                                style="text-align: center; padding: 4rem 2rem; background:white; border-radius:1.5rem; border:1px dashed #cbd5e1;">
+                                <div
+                                    style="width:60px; height:60px; background:#f1f5f9; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; color:#94a3b8; font-size:1.5rem;">
+                                    <i class="fa-regular fa-calendar"></i>
                                 </div>
-                                <input type="hidden" name="appointment_time" id="timeInput" required>
+                                <h3 style="color:#64748b; font-size:1rem; margin-bottom:0.5rem;">No appointments scheduled
+                                </h3>
+                                <p style="color:#94a3b8; font-size:0.9rem; max-width:300px; margin:0 auto;">Ready to book a
+                                    checkup, grooming session, or playdate?</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="schedule-list" style="display:grid; grid-template-columns:1fr; gap:1rem;">
+                                <?php foreach ($appointments as $appt):
+                                    $apptDate = new DateTime($appt['appointment_date']);
+                                    $isPast = $apptDate < new DateTime('today');
+                                    $statusColor = $isPast ? '#94a3b8' : '#10b981';
+                                    $bg = $isPast ? '#f8fafc' : 'white';
+                                    $border = $isPast ? '#e2e8f0' : '#e2e8f0';
+                                    ?>
+                                    <div class="appt-card"
+                                        style="background:<?php echo $bg; ?>; border:1px solid <?php echo $border; ?>; padding:1.5rem; border-radius:1rem; display:flex; align-items:center; gap:1.5rem;">
+                                        <!-- Date Box -->
+                                        <div
+                                            style="background:white; border:1px solid #e2e8f0; padding:0.8rem 1rem; border-radius:0.75rem; text-align:center; min-width:80px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+                                            <div style="font-weight:700; color:<?php echo $statusColor; ?>; font-size:1.25rem;">
+                                                <?php echo $apptDate->format('d'); ?>
+                                            </div>
+                                            <div
+                                                style="font-size:0.75rem; color:#64748b; text-transform:uppercase; font-weight:600;">
+                                                <?php echo $apptDate->format('M'); ?>
+                                            </div>
+                                        </div>
+
+                                        <!-- Info -->
+                                        <div style="flex:1;">
+                                            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
+                                                <h3 style="font-family:'Outfit'; font-size:1.1rem; margin:0; color:#1e293b;">
+                                                    <?php echo htmlspecialchars($appt['title']); ?>
+                                                </h3>
+                                                <?php if ($isPast): ?>
+                                                    <span
+                                                        style="background:#f1f5f9; color:#64748b; font-size:0.65rem; padding:2px 6px; border-radius:4px; font-weight:700;">COMPLETED</span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <p style="color:#64748b; font-size:0.9rem; margin-bottom:0.5rem;">
+                                                <i class="fa-regular fa-clock" style="margin-right:4px;"></i>
+                                                <?php echo date('g:i A', strtotime($appt['appointment_time'])); ?>
+                                                <span style="margin:0 8px; color:#cbd5e1;">|</span>
+                                                <i class="fa-solid fa-location-dot" style="margin-right:4px;"></i>
+                                                <?php echo htmlspecialchars($appt['hospital_name'] ?? 'PetCloud Partner'); ?>
+                                            </p>
+                                        </div>
+
+                                        <!-- Actions -->
+                                        <?php if (!$isPast): ?>
+                                            <form method="POST"
+                                                onsubmit="return confirm('Are you sure you want to cancel this appointment?');">
+                                                <input type="hidden" name="appointment_id" value="<?php echo $appt['id']; ?>">
+                                                <input type="hidden" name="cancel_appointment" value="1">
+                                                <button type="submit"
+                                                    style="background:white; border:1px solid #fee2e2; color:#ef4444; padding:0.6rem 1rem; border-radius:0.75rem; font-weight:600; cursor:pointer; font-size:0.85rem; transition:0.2s;"
+                                                    onmouseover="this.style.background='#fee2e2'"
+                                                    onmouseout="this.style.background='white'">
+                                                    Cancel
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+
+                    <!-- 2. New Appointment Form -->
+                    <div id="bookingSection" class="booking-form-wrapper">
+                        <div class="form-header"
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; border-bottom:1px solid #f1f5f9; padding-bottom:1rem;">
+                            <div>
+                                <h2
+                                    style="font-family:'Outfit'; font-size:1.5rem; color:#1e293b; margin-bottom:0.25rem;">
+                                    Schedule New Appointment</h2>
+                                <p style="color:#64748b; font-size:0.9rem;">Find the best care for your furry friend</p>
+                            </div>
+                            <div class="step-badge" id="stepBadge">
+                                <div class="step-dot"></div> Step 1: Details
                             </div>
                         </div>
 
-                        <div class="info-box">
-                            <i class="fa-solid fa-circle-info"></i>
-                            <div>Selected Clinic: <span id="selectedClinicName" style="font-weight:700;">-</span></div>
-                        </div>
+                        <form method="POST" id="bookingForm">
+                            <input type="hidden" name="hospital_id" id="hospitalIdInput">
+                            <input type="hidden" name="service_price" id="priceInput">
+
+                            <!-- STEP 1: Pet & Service -->
+                            <div id="step1">
+                                <div class="section-label"><i class="fa-solid fa-paw"></i> Pet Details</div>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                                    <div class="form-group">
+                                        <label
+                                            style="display:block; font-size:0.9rem; font-weight:600; color:#334155; margin-bottom:0.5rem;">Pet
+                                            Name</label>
+                                        <input type="text" name="pet_name" id="petNameInput" class="form-control"
+                                            style="width:100%; padding:0.75rem 1rem; border:1px solid #e2e8f0; border-radius:0.75rem;"
+                                            placeholder="e.g. Bella" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label
+                                            style="display:block; font-size:0.9rem; font-weight:600; color:#334155; margin-bottom:0.5rem;">Breed</label>
+                                        <select name="breed" class="form-control"
+                                            style="width:100%; padding:0.75rem 1rem; border:1px solid #e2e8f0; border-radius:0.75rem;"
+                                            required>
+                                            <option value="Dog">Dog</option>
+                                            <option value="Cat">Cat</option>
+                                            <option value="Bird">Bird</option>
+                                            <option value="Rabbit">Rabbit</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="section-label"><i class="fa-solid fa-layer-group"></i> Select Category</div>
+                                <div id="categoryGrid" class="service-grid">
+                                    <div style="grid-column:1/-1; text-align:center; color:#94a3b8;">Loading...</div>
+                                </div>
+
+                                <div id="serviceSelectionSection" style="display:none; margin-top: 1.5rem;">
+                                    <div class="section-label"><i class="fa-solid fa-briefcase-medical"></i> Select
+                                        Service</div>
+                                    <div id="serviceListGrid" class="service-grid"
+                                        style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+                                        <!-- Populated dynamically by JS -->
+                                    </div>
+                                </div>
+
+                                <input type="hidden" name="service_type" id="serviceTypeInput" required>
+
+                                <!-- Hospital Selection Container -->
+                                <div id="hospitalSection" style="display:none; margin-top: 2rem;">
+                                    <div class="section-label"><i class="fa-solid fa-hospital"></i> Select Clinic</div>
+                                    <div id="hospitalGrid" style="display:grid; grid-template-columns:1fr; gap:1rem;">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- STEP 2: Date & Time (Initially Hidden) -->
+                            <div id="step2" style="display:none; margin-top: 2rem;">
+                                <div
+                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem;">
+                                    <div>
+                                        <div class="section-label"><i class="fa-solid fa-calendar"></i> Select Date
+                                        </div>
+                                        <input type="date" name="appointment_date" id="dateInput" class="form-control"
+                                            style="width:100%; padding:0.75rem 1rem; border:1px solid #e2e8f0; border-radius:0.75rem; font-family:inherit;"
+                                            min="<?php echo date('Y-m-d'); ?>" required>
+                                    </div>
+                                    <div>
+                                        <div class="section-label"><i class="fa-solid fa-clock"></i> Available Time
+                                        </div>
+                                        <div class="time-panel" id="timeSlotContainer">
+                                            <div
+                                                style="grid-column: 1/-1; text-align:center; color:#94a3b8; padding:1rem;">
+                                                Select a date to view slots</div>
+                                        </div>
+                                        <input type="hidden" name="appointment_time" id="timeInput" required>
+                                    </div>
+                                </div>
+
+                                <div
+                                    style="background:#eff6ff; padding:1rem; border-radius:1rem; margin-top:1.5rem; display:flex; gap:0.75rem; color:#1e3a8a; font-size:0.9rem;">
+                                    <i class="fa-solid fa-circle-info" style="color:#3b82f6; margin-top:2px;"></i>
+                                    <div>Selected Clinic: <span id="selectedClinicName"
+                                            style="font-weight:700;">-</span></div>
+                                </div>
+                            </div>
+
+                            <div class="form-footer"
+                                style="margin-top:2.5rem; display:flex; justify-content:space-between; align-items:center; padding-top:1.5rem; border-top:1px dashed #e2e8f0;">
+                                <div class="total-box">
+                                    <span
+                                        style="display:block; font-size:0.75rem; color:#64748b; font-weight:600;">Total
+                                        estimation</span>
+                                    <div class="total-price" id="totalPriceDisplay"
+                                        style="font-size:1.5rem; font-weight:700; font-family:'Outfit'; color:#0f172a;">
+                                        ₹0</div>
+                                </div>
+                                <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+                                <input type="hidden" name="confirm_booking" value="1">
+                                <button type="button" class="btn-confirm" id="btnContinue"
+                                    style="background:#0f172a; color:white; padding:1rem 2rem; border-radius:1rem; border:none; font-weight:700; font-size:1rem; cursor:pointer; display:flex; align-items:center; gap:0.75rem; transition:0.3s;">
+                                    Secure Payment & Book <i class="fa-solid fa-lock" style="font-size: 0.8rem;"></i>
+                                </button>
+                            </div>
+                        </form>
                     </div>
 
-                    <div class="form-footer">
-                        <div class="total-box">
-                            <span>Total estimation</span>
-                            <div class="total-price" id="totalPriceDisplay">₹0</div>
-                        </div>
-                        <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
-                        <input type="hidden" name="confirm_booking" value="1">
-                        <button type="button" class="btn-confirm" id="btnContinue">
-                            Secure Payment & Book <i class="fa-solid fa-lock" style="font-size: 0.8rem;"></i>
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
-        </section>
-    </main>
-
-    <footer class="page-footer">
-        <div class="footer-item"><i class="fa-solid fa-shield-halved"></i> Secure Payment</div>
-        <div class="footer-item"><i class="fa-solid fa-user-shield"></i> Verified Pros</div>
-        <div class="footer-item"><i class="fa-solid fa-rotate-left"></i> Instant Refund</div>
-    </footer>
+        </main>
+    </div>
 
     <script>
         // DOM Elements
@@ -767,7 +550,6 @@ $allPets = $petsStmt->fetchAll();
         let currentHospitalId = null;
 
         // Initialize: Fetch Categories
-        // This is a new function to fetch categories from the API
         async function fetchCategories() {
             try {
                 const res = await fetch('api/get_service_categories.php');

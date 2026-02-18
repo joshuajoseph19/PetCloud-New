@@ -18,149 +18,151 @@
 
     <!-- CSS -->
     <link rel="stylesheet" href="css/styles.css">
+    <!-- Validation -->
+    <script src="js/form-validation.js" defer></script>
+</head>
+<style>
+    body {
+        background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+    }
 
-    <style>
-        body {
-            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem 1rem;
-        }
+    .admin-login-box {
+        max-width: 450px;
+        width: 100%;
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        padding: 3rem 2.5rem;
+    }
 
-        .admin-login-box {
-            max-width: 450px;
-            width: 100%;
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-            padding: 3rem 2.5rem;
-        }
+    .admin-badge {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        margin-bottom: 2rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
 
-        .admin-badge {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            margin-bottom: 2rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+    .admin-header h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
 
-        .admin-header h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
+    .admin-header p {
+        color: #6b7280;
+        margin-bottom: 2rem;
+    }
 
-        .admin-header p {
-            color: #6b7280;
-            margin-bottom: 2rem;
-        }
+    .warning-box {
+        background: #fef3c7;
+        border-left: 4px solid #fbbf24;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 2rem;
+    }
 
-        .warning-box {
-            background: #fef3c7;
-            border-left: 4px solid #fbbf24;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 2rem;
-        }
+    .warning-box p {
+        color: #92400e;
+        font-size: 0.875rem;
+        margin: 0;
+    }
 
-        .warning-box p {
-            color: #92400e;
-            font-size: 0.875rem;
-            margin: 0;
-        }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
 
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #111827;
+    }
 
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: #111827;
-        }
+    .form-group input {
+        width: 100%;
+        padding: 0.875rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
 
-        .form-group input {
-            width: 100%;
-            padding: 0.875rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.5rem;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
+    .form-group input:focus {
+        outline: none;
+        border-color: #ef4444;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
 
-        .form-group input:focus {
-            outline: none;
-            border-color: #ef4444;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-        }
+    .login-btn {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
 
-        .login-btn {
-            width: 100%;
-            padding: 1rem;
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
+    .login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px rgba(239, 68, 68, 0.3);
+    }
 
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px rgba(239, 68, 68, 0.3);
-        }
+    .back-link {
+        text-align: center;
+        margin-top: 1.5rem;
+    }
 
-        .back-link {
-            text-align: center;
-            margin-top: 1.5rem;
-        }
+    .back-link a {
+        color: #6b7280;
+        font-size: 0.875rem;
+        transition: color 0.3s;
+    }
 
-        .back-link a {
-            color: #6b7280;
-            font-size: 0.875rem;
-            transition: color 0.3s;
-        }
+    .back-link a:hover {
+        color: #111827;
+    }
 
-        .back-link a:hover {
-            color: #111827;
-        }
+    #error-msg {
+        background: #fee2e2;
+        color: #dc2626;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        display: none;
+        text-align: center;
+        font-size: 0.875rem;
+    }
 
-        #error-msg {
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            display: none;
-            text-align: center;
-            font-size: 0.875rem;
-        }
+    .info-box {
+        background: #dbeafe;
+        border-left: 4px solid #3b82f6;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
 
-        .info-box {
-            background: #dbeafe;
-            border-left: 4px solid #3b82f6;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .info-box p {
-            color: #1e40af;
-            font-size: 0.875rem;
-            margin: 0;
-            line-height: 1.5;
-        }
-    </style>
+    .info-box p {
+        color: #1e40af;
+        font-size: 0.875rem;
+        margin: 0;
+        line-height: 1.5;
+    }
+</style>
 </head>
 
 <body>

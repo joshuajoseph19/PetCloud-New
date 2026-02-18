@@ -27,24 +27,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_application']))
     $listing_id = $_POST['listing_id'] ?: null;
     $pet_name = $_POST['pet_name'];
     $pet_category = $_POST['pet_category'];
-    $full_name = $_POST['full_name'];
-    $email = $_POST['email'];
-    $phone = $_POST['phone'];
-    $reason = $_POST['reason'];
+    $full_name = trim($_POST['full_name']);
+    $email = trim($_POST['email']);
+    $phone = trim($_POST['phone']);
+    $reason = trim($_POST['reason']);
     $living = $_POST['living_situation'];
     $other_pets = isset($_POST['other_pets']) ? 1 : 0;
 
-    try {
-        $sql = "INSERT INTO adoption_applications (user_id, listing_id, pet_name, pet_category, applicant_name, applicant_email, applicant_phone, reason_for_adoption, living_situation, has_other_pets) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $stmt = $pdo->prepare($sql);
-        if ($stmt->execute([$user_id, $listing_id, $pet_name, $pet_category, $full_name, $email, $phone, $reason, $living, $other_pets])) {
-            $success = true;
-        } else {
-            $error = "Failed to submit application. Please try again.";
+    // --- Server-Side Validation ---
+    if (empty($full_name) || empty($email) || empty($phone) || empty($reason) || empty($living)) {
+        $error = "All required fields must be filled.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "Invalid email format.";
+    } elseif (!preg_match("/^[+]?[0-9\-\s]{10,15}$/", $phone)) {
+        $error = "Invalid phone number. Please enter at least 10 digits.";
+    } else {
+        try {
+            $sql = "INSERT INTO adoption_applications (user_id, listing_id, pet_name, pet_category, applicant_name, applicant_email, applicant_phone, reason_for_adoption, living_situation, has_other_pets) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $stmt = $pdo->prepare($sql);
+            if ($stmt->execute([$user_id, $listing_id, $pet_name, $pet_category, $full_name, $email, $phone, $reason, $living, $other_pets])) {
+                $success = true;
+            } else {
+                $error = "Failed to submit application. Please try again.";
+            }
+        } catch (PDOException $e) {
+            $error = "Database error: " . $e->getMessage();
         }
-    } catch (PDOException $e) {
-        $error = "Database error: " . $e->getMessage();
     }
 }
 ?>
@@ -56,6 +65,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_application']))
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adoption Application - PetCloud</title>
+    <!-- Combined Scripts -->
+    <script src="js/form-validation.js" defer></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700&display=swap"
         rel="stylesheet">

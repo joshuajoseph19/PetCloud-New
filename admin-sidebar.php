@@ -1,20 +1,20 @@
 <aside class="admin-sidebar" style="
     width: 260px;
-    background: #111827;
+    background: white;
     height: 100vh;
     position: fixed;
     left: 0;
     top: 0;
-    color: white;
-    padding: 2rem 1rem;
+    color: #64748b;
+    padding: 2rem 1.5rem;
     display: flex;
     flex-direction: column;
     z-index: 1000;
+    border-right: 1px solid #e5e7eb;
 ">
     <div class="sidebar-brand"
-        style="display: flex; align-items: flex-start; margin-bottom: 0.5rem; padding: 0.5rem 1.5rem 0;">
-        <img src="images/logo.png" alt="PetCloud Logo"
-            style="width: 160px; height: auto; filter: brightness(0) invert(1); object-fit: contain;">
+        style="display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; padding: 1rem;">
+        <img src="images/logo.png" alt="PetCloud Logo" style="height: 60px; width: auto; object-fit: contain;">
     </div>
 
     <nav class="sidebar-nav" style="display: flex; flex-direction: column; gap: 0.5rem; flex: 1;">
@@ -54,14 +54,9 @@
             class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'admin-settings.php' ? 'active' : ''; ?>">
             <i class="fa-solid fa-gears"></i> System Settings
         </a>
-        <a href="admin-logs.php"
-            class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'admin-logs.php' ? 'active' : ''; ?>">
-            <i class="fa-solid fa-list-check"></i> Audit Logs
-        </a>
     </nav>
 
-    <div class="sidebar-footer"
-        style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem; margin-top: auto;">
+    <div class="sidebar-footer" style="border-top: 1px solid #e5e7eb; padding-top: 1.5rem; margin-top: auto;">
         <a href="admin-logout.php" class="nav-item" style="color: #f87171;">
             <i class="fa-solid fa-right-from-bracket"></i> Sign Out
         </a>
@@ -74,12 +69,12 @@
         align-items: center;
         gap: 1rem;
         padding: 0.875rem 1.25rem;
-        color: #9ca3af;
+        color: #64748b;
         text-decoration: none;
         border-radius: 0.75rem;
-        font-weight: 500;
+        font-weight: 600;
         font-size: 0.9375rem;
-        transition: all 0.2s;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .nav-item i {
@@ -88,12 +83,16 @@
     }
 
     .nav-item:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: white;
+        background-color: rgba(59, 130, 246, 0.05);
+        color: #3b82f6;
+        /* Primary Blue from user dashboard */
+        transform: translateX(5px);
     }
 
     .nav-item.active {
-        background: #10b981;
+        background-color: #3b82f6;
+        /* Primary Blue */
         color: white;
+        box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
     }
 </style>

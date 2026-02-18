@@ -77,9 +77,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Default image if none provided
         $image = "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop";
 
+        $gender = $_POST['pet_gender'] ?? 'Unknown';
+        $weight = trim($_POST['pet_weight']) ?: '0 kg';
+        $desc = $_POST['pet_description'] ?? '';
+
         try {
-            $stmt = $pdo->prepare("INSERT INTO user_pets (user_id, pet_name, pet_breed, pet_age, pet_type, pet_image) VALUES (?, ?, ?, ?, ?, ?)");
-            if ($stmt->execute([$user_id, $name, $breed, $age, $type, $image])) {
+            $stmt = $pdo->prepare("INSERT INTO user_pets (user_id, pet_name, pet_breed, pet_age, pet_type, pet_image, pet_gender, pet_weight, pet_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            if ($stmt->execute([$user_id, $name, $breed, $age, $type, $image, $gender, $weight, $desc])) {
                 $success = "New family member added! 🐾";
             }
         } catch (PDOException $e) {
@@ -94,6 +98,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         } catch (PDOException $e) {
             $error = "Error removing pet: " . $e->getMessage();
+        }
+    } elseif (isset($_POST['edit_pet'])) {
+        $pet_id = $_POST['pet_id'];
+        $name = $_POST['pet_name'];
+        $breed = $_POST['pet_breed'];
+        $age = $_POST['pet_age'];
+        $type = $_POST['pet_type'];
+        $gender = $_POST['pet_gender'];
+        $weight = $_POST['pet_weight'];
+        $desc = $_POST['pet_description'];
+
+        try {
+            $sql = "UPDATE user_pets SET pet_name=?, pet_breed=?, pet_age=?, pet_type=?, pet_gender=?, pet_weight=?, pet_description=? WHERE id=? AND user_id=?";
+            $stmt = $pdo->prepare($sql);
+            if ($stmt->execute([$name, $breed, $age, $type, $gender, $weight, $desc, $pet_id, $user_id])) {
+                $success = "Pet details updated successfully! 🐾";
+            }
+        } catch (PDOException $e) {
+            $error = "Error updating pet: " . $e->getMessage();
         }
     }
 }
@@ -254,41 +277,7 @@ $pets = $stmt->fetchAll();
 <body class="dashboard-page">
     <div class="dashboard-container">
         <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-brand"
-                style="padding: 0.5rem 1.5rem 0; display: flex; align-items: flex-start; margin-bottom: 0;">
-                <img src="images/logo.png" alt="PetCloud Logo" style="width: 180px; height: auto; object-fit: contain;">
-            </div>
-            <nav class="sidebar-nav">
-                <a href="dashboard.php" class="nav-item">
-                    <i class="fa-solid fa-table-cells-large"></i> Overview
-                </a>
-                <a href="adoption.php" class="nav-item">
-                    <i class="fa-solid fa-heart"></i> Adoption
-                </a>
-                <a href="mypets.php" class="nav-item active">
-                    <i class="fa-solid fa-paw"></i> My Pets
-                </a>
-                <a href="smart-feeder.php" class="nav-item">
-                    <i class="fa-solid fa-microchip"></i> Smart Feeder
-                </a>
-                <a href="schedule.php" class="nav-item">
-                    <i class="fa-regular fa-calendar"></i> Schedule
-                    <span class="nav-badge">2</span>
-                </a>
-                <a href="marketplace.php" class="nav-item">
-                    <i class="fa-solid fa-bag-shopping"></i> Marketplace
-                </a>
-                <a href="health-records.php" class="nav-item">
-                    <i class="fa-solid fa-notes-medical"></i> Health Records
-                </a>
-            </nav>
-            <div class="sidebar-footer">
-                <a href="logout.php" class="nav-item">
-                    <i class="fa-solid fa-right-from-bracket"></i> Logout
-                </a>
-            </div>
-        </aside>
+        <?php include 'user-sidebar.php'; ?>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -354,7 +343,7 @@ $pets = $stmt->fetchAll();
                                     <?php endif; ?>
 
                                     <button class="btn btn-sm btn-outline" style="padding: 0.4rem 1rem;"
-                                        onclick="window.location.href='health-records.php'">Health</button>
+                                        onclick="window.location.href='health-records.php?pet_id=<?php echo $pet['id']; ?>'">Health</button>
                                     <form method="POST"
                                         onsubmit="return confirm('Are you sure you want to remove <?php echo htmlspecialchars($pet['pet_name']); ?>? This action cannot be undone.');"
                                         style="display:inline;">
@@ -409,6 +398,23 @@ $pets = $stmt->fetchAll();
                     <label>Age</label>
                     <input type="text" name="pet_age" required placeholder="e.g. 2 Years">
                 </div>
+                <div class="form-group">
+                    <label>Gender</label>
+                    <select name="pet_gender" required>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Unknown">Unknown</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Weight</label>
+                    <input type="text" name="pet_weight" placeholder="e.g. 5 kg">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="pet_description" rows="3" placeholder="Tell us about your pet..."
+                        style="width: 100%; padding: 0.75rem; border: 1.5px solid #e5e7eb; border-radius: 0.75rem; font-family: inherit;"></textarea>
+                </div>
                 <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                     <button type="button" class="btn btn-outline" style="flex: 1;"
                         onclick="closeModal()">Cancel</button>
@@ -426,9 +432,17 @@ $pets = $stmt->fetchAll();
                     <img id="detailPetImage" src="" style="width: 100%; height: 100%; object-fit: cover;">
                 </div>
                 <div style="flex: 1.2; padding: 2.5rem; display: flex; flex-direction: column; position: relative;">
-                    <button onclick="closeDetailModal()"
-                        style="position: absolute; right: 1.5rem; top: 1.5rem; background: #f3f4f6; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer;"><i
-                            class="fa-solid fa-xmark"></i></button>
+                    <div style="position: absolute; right: 1.5rem; top: 1.5rem; display: flex; gap: 0.5rem;">
+                        <button onclick="openEditModalFromDetail()"
+                            style="background: #e0f2fe; color: #0369a1; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;"
+                            title="Edit Pet">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button onclick="closeDetailModal()"
+                            style="background: #f3f4f6; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
 
                     <div style="margin-bottom: 2rem;">
                         <span id="detailPetType"
@@ -466,16 +480,72 @@ $pets = $stmt->fetchAll();
                         <button class="btn btn-primary" style="flex: 1; padding: 1rem; border-radius: 1rem;"
                             onclick="window.location.href='schedule.php'">Schedule Vet</button>
                         <button class="btn btn-outline" style="flex: 1; padding: 1rem; border-radius: 1rem;"
-                            onclick="window.location.href='health-records.php'">Health Records</button>
+                            id="detail_health_btn" onclick="window.location.href='health-records.php'">Health
+                            Records</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Edit Pet Modal -->
+    <div id="editPetModal" class="modal">
+        <div class="modal-content">
+            <h2 style="font-family: 'Outfit'; margin-bottom: 1.5rem;">Edit Pet Details</h2>
+            <form method="POST">
+                <input type="hidden" name="pet_id" id="edit_pet_id">
+                <div class="form-group">
+                    <label>Pet Name</label>
+                    <input type="text" name="pet_name" id="edit_pet_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Pet Type</label>
+                    <select name="pet_type" id="edit_pet_type" required>
+                        <option value="Dog">Dog</option>
+                        <option value="Cat">Cat</option>
+                        <option value="Bird">Bird</option>
+                        <option value="Rabbit">Rabbit</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Breed</label>
+                    <input type="text" name="pet_breed" id="edit_pet_breed" required>
+                </div>
+                <div class="form-group">
+                    <label>Age</label>
+                    <input type="text" name="pet_age" id="edit_pet_age" required>
+                </div>
+                <div class="form-group">
+                    <label>Gender</label>
+                    <select name="pet_gender" id="edit_pet_gender" required>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Unknown">Unknown</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Weight</label>
+                    <input type="text" name="pet_weight" id="edit_pet_weight">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="pet_description" id="edit_pet_description" rows="3"
+                        style="width: 100%; padding: 0.75rem; border: 1.5px solid #e5e7eb; border-radius: 0.75rem; font-family: inherit;"></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-outline" style="flex: 1;"
+                        onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" name="edit_pet" class="btn btn-primary" style="flex: 1;">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const addModal = document.getElementById('addPetModal');
         const detailModal = document.getElementById('petDetailModal');
+        const editModal = document.getElementById('editPetModal');
         const petSearch = document.getElementById('petSearch');
 
         // Use PHP to inject pet data for JS access
@@ -500,9 +570,18 @@ $pets = $stmt->fetchAll();
             document.getElementById('detailPetType').textContent = pet.pet_type || 'Pet';
 
             // New fields from image
-            document.getElementById('detailPetWeight').textContent = pet.pet_weight || '5.4 kg';
-            document.getElementById('detailPetGender').textContent = pet.pet_gender || 'Female';
+            document.getElementById('detailPetWeight').textContent = pet.pet_weight || 'Unknown';
+            document.getElementById('detailPetGender').textContent = pet.pet_gender || 'Unknown';
             document.getElementById('detailPetDescription').textContent = pet.pet_description || 'No description available.';
+
+            // Setup Edit Button in Detail Modal if we added one (or we can call openEditModal directly)
+            // Let's add an Edit button dynamically or ensure it exists in HTML
+            // For now, let's expose specific pet data to potential edit button
+            window.currentPetId = petId;
+
+            document.getElementById('detail_health_btn').onclick = function () {
+                window.location.href = 'health-records.php?pet_id=' + pet.id;
+            };
 
             detailModal.style.display = 'block';
         }
@@ -511,10 +590,37 @@ $pets = $stmt->fetchAll();
             detailModal.style.display = 'none';
         }
 
+        function openEditModalFromDetail() {
+            if (!window.currentPetId) return;
+            closeDetailModal();
+            openEditModal(window.currentPetId);
+        }
+
+        function openEditModal(petId) {
+            const pet = myPetsData.find(p => p.id == petId);
+            if (!pet) return;
+
+            document.getElementById('edit_pet_id').value = pet.id;
+            document.getElementById('edit_pet_name').value = pet.pet_name;
+            document.getElementById('edit_pet_type').value = pet.pet_type;
+            document.getElementById('edit_pet_breed').value = pet.pet_breed;
+            document.getElementById('edit_pet_age').value = pet.pet_age;
+            document.getElementById('edit_pet_gender').value = pet.pet_gender || 'Unknown';
+            document.getElementById('edit_pet_weight').value = pet.pet_weight || '';
+            document.getElementById('edit_pet_description').value = pet.pet_description || '';
+
+            editModal.style.display = 'block';
+        }
+
+        function closeEditModal() {
+            editModal.style.display = 'none';
+        }
+
         // Close on click outside
         window.onclick = (e) => {
             if (e.target == addModal) closeModal();
             if (e.target == detailModal) closeDetailModal();
+            if (e.target == editModal) closeEditModal();
         }
 
         // Search functionality

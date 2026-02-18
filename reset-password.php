@@ -42,6 +42,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Validation -->
+    <script src="js/form-validation.js" defer></script>
 </head>
 
 <body class="auth-page">

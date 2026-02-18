@@ -90,17 +90,7 @@ $reports = $stmt->fetchAll();
 <body class="dashboard-page">
     <div class="dashboard-container">
         <!-- Sidebar (Simplified or use partial) -->
-        <aside class="sidebar">
-            <div class="sidebar-brand"
-                style="padding: 0.5rem 1.5rem 0; display: flex; align-items: flex-start; margin-bottom: 0;">
-                <img src="images/logo.png" alt="PetCloud Logo" style="width: 180px; height: auto; object-fit: contain;">
-            </div>
-            <nav class="sidebar-nav">
-                <a href="dashboard.php" class="nav-item">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
-                </a>
-            </nav>
-        </aside>
+        <?php include 'user-sidebar.php'; ?>
 
         <main class="main-content">
             <header class="top-header">

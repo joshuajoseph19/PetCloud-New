@@ -36,14 +36,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $appt_id = $_POST['appointment_id'];
         // Cancel appointment safely
         $pdo->prepare("UPDATE appointments SET status = 'cancelled' WHERE id = ? AND user_id = ?")->execute([$appt_id, $user_id]);
-        
+
         // Refresh to reflect changes
         header("Location: dashboard.php");
         exit();
     } elseif (isset($_POST['listing_action'])) {
         $lid = $_POST['listing_id'];
         $action = $_POST['listing_action'];
-        
+
         // Verify ownership
         $check = $pdo->prepare("SELECT id FROM adoption_listings WHERE id = ? AND user_id = ?");
         $check->execute([$lid, $user_id]);
@@ -64,10 +64,37 @@ $reminderStmt = $pdo->prepare("SELECT * FROM health_reminders WHERE user_id = ? 
 $reminderStmt->execute([$user_id]);
 $currentReminder = $reminderStmt->fetch();
 
-// Fetch Feeding Schedules
-$feedStmt = $pdo->prepare("SELECT * FROM feeding_schedules WHERE user_id = ? ORDER BY feeding_time ASC");
+// Fetch Feeding Schedules (Filtered for Today)
+$feedStmt = $pdo->prepare("
+    SELECT fs.*, p.pet_name 
+    FROM feeding_schedules fs 
+    LEFT JOIN user_pets p ON fs.pet_id = p.id 
+    WHERE fs.user_id = ? 
+    ORDER BY fs.feeding_time ASC
+");
 $feedStmt->execute([$user_id]);
-$feedingSchedules = $feedStmt->fetchAll();
+$allSchedules = $feedStmt->fetchAll();
+
+// Filter for Today
+$feedingSchedules = [];
+$todayDay = date('D'); // Mon, Tue...
+foreach ($allSchedules as $fs) {
+    if (isset($fs['days_of_week'])) {
+        $days = json_decode($fs['days_of_week'] ?? '[]');
+        // If days is null/empty (legacy) assume daily, otherwise check day
+        if (!is_array($days) || empty($days) || in_array($todayDay, $days)) {
+             $feedingSchedules[] = $fs;
+        }
+    } else {
+        // Handle legacy case if column missing (shouldn't happen)
+        $feedingSchedules[] = $fs;
+    }
+}
+
+// Fetch Real Daily Tasks
+$tasksStmt = $pdo->prepare("SELECT * FROM daily_tasks WHERE user_id = ? AND task_date = CURDATE()");
+$tasksStmt->execute([$user_id]);
+$dailyTasks = $tasksStmt->fetchAll();
 
 // Fetch Top 3 Health Reminders (for Card)
 $healthStmt = $pdo->prepare("SELECT * FROM health_reminders WHERE user_id = ? AND status = 'pending' ORDER BY due_at ASC LIMIT 3");
@@ -109,7 +136,7 @@ if ($city) {
     if (empty($nearbyLostPets) && empty($nearbyStrays)) {
         $lostStmt = $pdo->query("SELECT lpa.*, p.pet_name, p.pet_breed, p.pet_image, u.full_name as owner_name FROM lost_pet_alerts lpa JOIN user_pets p ON lpa.pet_id = p.id JOIN users u ON lpa.user_id = u.id WHERE lpa.status = 'Active' ORDER BY lpa.created_at DESC LIMIT 5");
         $nearbyLostPets = $lostStmt->fetchAll();
-        
+
         $strayStmt = $pdo->query("SELECT * FROM general_found_pets WHERE status = 'Active' ORDER BY created_at DESC LIMIT 5");
         $nearbyStrays = $strayStmt->fetchAll();
     }
@@ -176,64 +203,7 @@ if (!$currentReminder) {
 
     <div class="dashboard-container">
         <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-brand" style="padding: 0.5rem 1.5rem 0; display: flex; align-items: flex-start; margin-bottom: 0;">
-                <img src="images/logo.png" alt="PetCloud Logo" style="width: 180px; height: auto; object-fit: contain;">
-            </div>
-
-            <nav class="sidebar-nav">
-                <a href="dashboard.php" class="nav-item active">
-                    <i class="fa-solid fa-house"></i> Overview
-                </a>
-                <a href="adoption.php" class="nav-item">
-                    <i class="fa-solid fa-heart"></i> Adoption
-                </a>
-                <a href="pet-rehoming.php" class="nav-item">
-                    <i class="fa-solid fa-house-chimney-user"></i> Pet Rehoming
-                </a>
-                <a href="mypets.php" class="nav-item">
-                    <i class="fa-solid fa-paw"></i> My Pets
-                </a>
-                <a href="smart-feeder.php" class="nav-item">
-                    <i class="fa-solid fa-microchip"></i> Smart Feeder
-                </a>
-                <a href="my-orders.php" class="nav-item">
-                    <i class="fa-solid fa-bag-shopping"></i> My Orders
-                </a>
-                <a href="schedule.php" class="nav-item">
-                    <i class="fa-regular fa-calendar"></i> Schedule
-                    <span class="nav-badge">2</span>
-                </a>
-                <a href="marketplace.php" class="nav-item">
-                    <i class="fa-solid fa-bag-shopping"></i> Marketplace
-                </a>
-                <a href="health-records.php" class="nav-item">
-                    <i class="fa-solid fa-notes-medical"></i> Health Records
-                </a>
-                <a href="lost-pet-reports.php" class="nav-item">
-                    <i class="fa-solid fa-bullhorn"></i> Lost Pet Reports
-                    <?php if ($foundReportsCount > 0): ?>
-                        <span class="nav-badge" style="background: #ef4444;"><?php echo $foundReportsCount; ?></span>
-                    <?php endif; ?>
-                </a>
-            </nav>
-
-            <div class="sidebar-footer">
-                <a href="logout.php" class="nav-item">
-                    <i class="fa-solid fa-right-from-bracket"></i> Logout
-                </a>
-                <div class="user-mini-profile">
-                    <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($user_name); ?>&background=random"
-                        alt="Profile" class="mini-avatar">
-                    <div class="mini-info">
-                        <span class="mini-name">
-                            <?php echo htmlspecialchars($user_name); ?>
-                        </span>
-                        <span class="mini-role">Premium Member</span>
-                    </div>
-                </div>
-            </div>
-        </aside>
+        <?php include 'user-sidebar.php'; ?>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -245,47 +215,83 @@ if (!$currentReminder) {
                 </div>
                 <div class="header-actions">
                     <div class="notif-wrapper" style="position: relative;">
-                        <button type="button" class="icon-btn" id="notif-trigger" style="border: none; background: #f1f5f9; cursor: pointer;">
+                        <button type="button" class="icon-btn" id="notif-trigger"
+                            style="border: none; background: #f1f5f9; cursor: pointer;">
                             <i class="fa-regular fa-bell"></i>
-                            <span class="notification-dot" style="background: #3b82f6; position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; border-radius: 50%; border: 2px solid #fff;"></span>
+                            <span class="notification-dot"
+                                style="background: #3b82f6; position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; border-radius: 50%; border: 2px solid #fff;"></span>
                         </button>
-                        <div class="notif-dropdown" id="notif-dropdown" style="display: none; position: absolute; top: calc(100% + 10px); right: 0; width: 320px; background: white; border-radius: 1rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border: 1px solid #f1f5f9; z-index: 9999; overflow: hidden;">
-                            <div class="notif-header" style="padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-                                <h3 style="font-family: 'Outfit'; font-size: 1rem; font-weight: 700; margin: 0;">Notifications</h3>
+                        <div class="notif-dropdown" id="notif-dropdown"
+                            style="display: none; position: absolute; top: calc(100% + 10px); right: 0; width: 320px; background: white; border-radius: 1rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border: 1px solid #f1f5f9; z-index: 9999; overflow: hidden;">
+                            <div class="notif-header"
+                                style="padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                                <h3 style="font-family: 'Outfit'; font-size: 1rem; font-weight: 700; margin: 0;">
+                                    Notifications</h3>
                                 <span style="font-size: 0.75rem; color: #3b82f6; font-weight: 600;">3 New</span>
                             </div>
                             <div class="notif-list" style="max-height: 350px; overflow-y: auto;">
-                                <a href="schedule.php" class="notif-item" style="padding: 1rem 1.25rem; display: flex; gap: 1rem; border-bottom: 1px solid #f8fafc; text-decoration: none; color: inherit; transition: background 0.2s;">
-                                    <div class="notif-icon" style="width: 36px; height: 36px; border-radius: 50%; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="fa-solid fa-calendar-check"></i></div>
+                                <a href="schedule.php" class="notif-item"
+                                    style="padding: 1rem 1.25rem; display: flex; gap: 1rem; border-bottom: 1px solid #f8fafc; text-decoration: none; color: inherit; transition: background 0.2s;">
+                                    <div class="notif-icon"
+                                        style="width: 36px; height: 36px; border-radius: 50%; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <i class="fa-solid fa-calendar-check"></i></div>
                                     <div class="notif-content">
-                                        <div class="notif-title" style="font-size: 0.85rem; font-weight: 600; color: #1e293b;">Upcoming Appointment</div>
-                                        <div class="notif-desc" style="font-size: 0.75rem; color: #64748b; line-height: 1.4;">Leo's vaccination scheduled for tomorrow at 10 AM.</div>
-                                        <div class="notif-time" style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.5rem;">2 hours ago</div>
+                                        <div class="notif-title"
+                                            style="font-size: 0.85rem; font-weight: 600; color: #1e293b;">Upcoming
+                                            Appointment</div>
+                                        <div class="notif-desc"
+                                            style="font-size: 0.75rem; color: #64748b; line-height: 1.4;">Leo's
+                                            vaccination scheduled for tomorrow at 10 AM.</div>
+                                        <div class="notif-time"
+                                            style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.5rem;">2 hours ago
+                                        </div>
                                     </div>
                                 </a>
-                                <a href="smart-feeder.php" class="notif-item" style="padding: 1rem 1.25rem; display: flex; gap: 1rem; border-bottom: 1px solid #f8fafc; text-decoration: none; color: inherit; transition: background 0.2s;">
-                                    <div class="notif-icon" style="width: 36px; height: 36px; border-radius: 50%; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="fa-solid fa-bone"></i></div>
+                                <a href="smart-feeder.php" class="notif-item"
+                                    style="padding: 1rem 1.25rem; display: flex; gap: 1rem; border-bottom: 1px solid #f8fafc; text-decoration: none; color: inherit; transition: background 0.2s;">
+                                    <div class="notif-icon"
+                                        style="width: 36px; height: 36px; border-radius: 50%; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <i class="fa-solid fa-bone"></i></div>
                                     <div class="notif-content">
-                                        <div class="notif-title" style="font-size: 0.85rem; font-weight: 600; color: #1e293b;">Smart Feeder Alert</div>
-                                        <div class="notif-desc" style="font-size: 0.75rem; color: #64748b; line-height: 1.4;">Tank's lunch successfully dispensed (45g).</div>
-                                        <div class="notif-time" style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.5rem;">4 hours ago</div>
+                                        <div class="notif-title"
+                                            style="font-size: 0.85rem; font-weight: 600; color: #1e293b;">Smart Feeder
+                                            Alert</div>
+                                        <div class="notif-desc"
+                                            style="font-size: 0.75rem; color: #64748b; line-height: 1.4;">Tank's lunch
+                                            successfully dispensed (45g).</div>
+                                        <div class="notif-time"
+                                            style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.5rem;">4 hours ago
+                                        </div>
                                     </div>
                                 </a>
-                                <a href="lost-pet-reports.php" class="notif-item" style="padding: 1rem 1.25rem; display: flex; gap: 1rem; border-bottom: 1px solid #f8fafc; text-decoration: none; color: inherit; transition: background 0.2s;">
-                                    <div class="notif-icon" style="width: 36px; height: 36px; border-radius: 50%; background: #fff1f2; color: #ef4444; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="fa-solid fa-bullhorn"></i></div>
+                                <a href="lost-pet-reports.php" class="notif-item"
+                                    style="padding: 1rem 1.25rem; display: flex; gap: 1rem; border-bottom: 1px solid #f8fafc; text-decoration: none; color: inherit; transition: background 0.2s;">
+                                    <div class="notif-icon"
+                                        style="width: 36px; height: 36px; border-radius: 50%; background: #fff1f2; color: #ef4444; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <i class="fa-solid fa-bullhorn"></i></div>
                                     <div class="notif-content">
-                                        <div class="notif-title" style="font-size: 0.85rem; font-weight: 600; color: #1e293b;">Lost Pet Nearby</div>
-                                        <div class="notif-desc" style="font-size: 0.75rem; color: #64748b; line-height: 1.4;">A report was filed 2km away from your location.</div>
-                                        <div class="notif-time" style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.5rem;">Yesterday</div>
+                                        <div class="notif-title"
+                                            style="font-size: 0.85rem; font-weight: 600; color: #1e293b;">Lost Pet
+                                            Nearby</div>
+                                        <div class="notif-desc"
+                                            style="font-size: 0.75rem; color: #64748b; line-height: 1.4;">A report was
+                                            filed 2km away from your location.</div>
+                                        <div class="notif-time"
+                                            style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.5rem;">Yesterday
+                                        </div>
                                     </div>
                                 </a>
                             </div>
-                            <div class="notif-footer" style="padding: 0.75rem; text-align: center; background: #f8fafc;">
-                                <a href="#" style="font-size: 0.8rem; font-weight: 600; color: #3b82f6; text-decoration: none;">See all activities</a>
+                            <div class="notif-footer"
+                                style="padding: 0.75rem; text-align: center; background: #f8fafc;">
+                                <a href="#"
+                                    style="font-size: 0.8rem; font-weight: 600; color: #3b82f6; text-decoration: none;">See
+                                    all activities</a>
                             </div>
                         </div>
                     </div>
-                    <a href="mypets.php" class="btn" style="background: #4b5e71; color: white; padding: 0.75rem 1.75rem; border-radius: 0.75rem; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px;">
+                    <a href="mypets.php" class="btn"
+                        style="background: #4b5e71; color: white; padding: 0.75rem 1.75rem; border-radius: 0.75rem; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px;">
                         ADD A PET
                     </a>
                 </div>
@@ -294,21 +300,38 @@ if (!$currentReminder) {
             <div class="content-wrapper">
                 <!-- Lost Pet Alert Banner -->
                 <?php if (!empty($nearbyLostPets)): ?>
-                    <div class="lost-pet-alert-banner" style="background: #fff1f2; border: 1px solid #fecaca; border-radius: 1.5rem; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1.5rem; animation: pulse 2s infinite;">
-                        <div style="background: #ef4444; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+                    <div class="lost-pet-alert-banner"
+                        style="background: #fff1f2; border: 1px solid #fecaca; border-radius: 1.5rem; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1.5rem; animation: pulse 2s infinite;">
+                        <div
+                            style="background: #ef4444; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
                             <i class="fa-solid fa-bullhorn"></i>
                         </div>
                         <div style="flex: 1;">
-                            <h3 style="font-family: 'Outfit'; color: #991b1b; margin-bottom: 0.25rem;">Lost Pet Alert Nearby!</h3>
-                            <p style="color: #b91c1c; font-size: 0.9rem;">A <strong><?php echo htmlspecialchars($nearbyLostPets[0]['pet_breed']); ?></strong> named <strong><?php echo htmlspecialchars($nearbyLostPets[0]['pet_name']); ?></strong> was last seen near <?php echo htmlspecialchars($nearbyLostPets[0]['last_seen_location']); ?>. Please keep an eye out!</p>
+                            <h3 style="font-family: 'Outfit'; color: #991b1b; margin-bottom: 0.25rem;">Lost Pet Alert
+                                Nearby!</h3>
+                            <p style="color: #b91c1c; font-size: 0.9rem;">A
+                                <strong><?php echo htmlspecialchars($nearbyLostPets[0]['pet_breed']); ?></strong> named
+                                <strong><?php echo htmlspecialchars($nearbyLostPets[0]['pet_name']); ?></strong> was last
+                                seen near <?php echo htmlspecialchars($nearbyLostPets[0]['last_seen_location']); ?>. Please
+                                keep an eye out!</p>
                         </div>
-                        <a href="#lost-pets-section" class="btn" style="background: #ef4444; color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 700; text-decoration: none;">Help Find</a>
+                        <a href="#lost-pets-section" class="btn"
+                            style="background: #ef4444; color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 700; text-decoration: none;">Help
+                            Find</a>
                     </div>
                     <style>
                         @keyframes pulse {
-                            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-                            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
-                            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+                            0% {
+                                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+                            }
+
+                            70% {
+                                box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
+                            }
+
+                            100% {
+                                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+                            }
                         }
                     </style>
                 <?php endif; ?>
@@ -318,17 +341,22 @@ if (!$currentReminder) {
                     style="background: url('images/dashboard_hero_v3.png'); background-size: cover; background-position: center; padding: 0; border-radius: 2.5rem; margin-bottom: 3rem; position: relative; overflow: hidden; box-shadow: var(--shadow-premium); min-height: 380px; display: flex; align-items: flex-end;">
 
                     <!-- Glassmorphism Box Overlay (Image 0 style) -->
-                    <div class="hero-box-overlay" style="background: rgba(255, 255, 255, 0.45); backdrop-filter: blur(12px); width: 100%; padding: 4rem 3.5rem; border-radius: 0 0 2.5rem 2.5rem; border-top: 1px solid rgba(255,255,255,0.3);">
-                        <h1 style="font-size: 4.2rem; font-family: 'Outfit'; font-weight: 800; color: #0f172a; margin-bottom: 0.75rem; letter-spacing: -3px; line-height: 1;">
-                            <?php echo $greeting; ?>, <?php echo htmlspecialchars(strtolower(explode(' ', $user_name)[0])); ?>!
+                    <div class="hero-box-overlay"
+                        style="background: rgba(255, 255, 255, 0.45); backdrop-filter: blur(12px); width: 100%; padding: 4rem 3.5rem; border-radius: 0 0 2.5rem 2.5rem; border-top: 1px solid rgba(255,255,255,0.3);">
+                        <h1
+                            style="font-size: 4.2rem; font-family: 'Outfit'; font-weight: 800; color: #0f172a; margin-bottom: 0.75rem; letter-spacing: -3px; line-height: 1;">
+                            <?php echo $greeting; ?>,
+                            <?php echo htmlspecialchars(strtolower(explode(' ', $user_name)[0])); ?>!
                         </h1>
-                        <p style="font-size: 1.35rem; font-weight: 500; color: #1e293b; max-width: 700px; line-height: 1.4; opacity: 0.9;">
+                        <p
+                            style="font-size: 1.35rem; font-weight: 500; color: #1e293b; max-width: 700px; line-height: 1.4; opacity: 0.9;">
                             <?php echo htmlspecialchars($currentReminder['pet_name'] . ' ' . $currentReminder['message']); ?>
                         </p>
                     </div>
 
                     <!-- Decorative Paw Print (Image 0 style) -->
-                    <div style="position: absolute; right: 2rem; top: 2rem; opacity: 0.15; font-size: 12rem; color: #0f172a; pointer-events: none;">
+                    <div
+                        style="position: absolute; right: 2rem; top: 2rem; opacity: 0.15; font-size: 12rem; color: #0f172a; pointer-events: none;">
                         <i class="fa-solid fa-paw"></i>
                     </div>
                 </section>
@@ -348,11 +376,11 @@ if (!$currentReminder) {
                         $petsStmt = $pdo->prepare("SELECT * FROM user_pets WHERE user_id = ?");
                         $petsStmt->execute([$user_id]);
                         $myPets = $petsStmt->fetchAll();
-                        foreach ($myPets as $pet): 
+                        foreach ($myPets as $pet):
                             $isLost = ($pet['status'] === 'Lost');
                             $cardBorder = $isLost ? '2px solid #ef4444' : '1px solid #f3f4f6';
                             $statusLabel = $isLost ? '<span style="background:#fee2e2; color:#ef4444; font-size:0.65rem; padding:2px 6px; border-radius:10px; font-weight:700;">LOST</span>' : '';
-                        ?>
+                            ?>
                             <div class="mini-pet-card"
                                 style="min-width: 140px; background: white; padding: 1rem; border-radius: 1.25rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border: <?php echo $cardBorder; ?>; position: relative;">
                                 <?php echo $statusLabel; ?>
@@ -364,14 +392,19 @@ if (!$currentReminder) {
                                 <p style="font-size: 0.7rem; color: #9ca3af; margin-bottom: 0.75rem;">
                                     <?php echo htmlspecialchars($pet['pet_breed']); ?>
                                 </p>
-                                
+
                                 <?php if ($isLost): ?>
                                     <form method="POST">
                                         <input type="hidden" name="pet_id" value="<?php echo $pet['id']; ?>">
-                                        <button type="submit" name="mark_as_found" class="btn" style="background: #10b981; color: white; font-size: 0.65rem; padding: 0.4rem 0.8rem; border-radius: 0.5rem; width: 100%; font-weight: 700; border: none; cursor: pointer;">Found!</button>
+                                        <button type="submit" name="mark_as_found" class="btn"
+                                            style="background: #10b981; color: white; font-size: 0.65rem; padding: 0.4rem 0.8rem; border-radius: 0.5rem; width: 100%; font-weight: 700; border: none; cursor: pointer;">Found!</button>
                                     </form>
                                 <?php else: ?>
-                                    <button onclick="openLostModal(<?php echo $pet['id']; ?>, '<?php echo htmlspecialchars($pet['pet_name']); ?>')" class="btn" style="background: #f3f4f6; color: #4b5563; font-size: 0.65rem; padding: 0.4rem 0.8rem; border-radius: 0.5rem; width: 100%; font-weight: 700; border: none; cursor: pointer;">Mark Lost</button>
+                                    <button
+                                        onclick="openLostModal(<?php echo $pet['id']; ?>, '<?php echo htmlspecialchars($pet['pet_name']); ?>')"
+                                        class="btn"
+                                        style="background: #f3f4f6; color: #4b5563; font-size: 0.65rem; padding: 0.4rem 0.8rem; border-radius: 0.5rem; width: 100%; font-weight: 700; border: none; cursor: pointer;">Mark
+                                        Lost</button>
                                 <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
@@ -387,41 +420,7 @@ if (!$currentReminder) {
                     <!-- Column 1: Quick Actions & Schedule -->
                     <div class="grid-col-left">
                         <!-- Quick Actions Grid -->
-                        <div class="quick-actions-grid"
-                            style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 2rem;">
-                            <a href="adoption.php" class="quick-action-card"
-                                style="background: white; padding: 1.5rem; border-radius: 1.25rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-decoration: none; color: inherit; display: block; border: 1px solid #f3f4f6; transition: transform 0.2s;">
-                                <div class="action-icon"
-                                    style="width: 44px; height: 44px; background: #d1fae5; color: #10b981; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
-                                    <i class="fa-solid fa-heart"></i>
-                                </div>
-                                <h3 style="font-size: 1rem; margin-bottom: 0.25rem; font-family: 'Outfit';">Adopt a
-                                    Companion</h3>
-                                <p style="font-size: 0.85rem; color: #6b7280;">Find your new best friend</p>
-                            </a>
 
-                            <a href="schedule.php" class="quick-action-card"
-                                style="background: white; padding: 1.5rem; border-radius: 1.25rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-decoration: none; color: inherit; display: block; border: 1px solid #f3f4f6; transition: transform 0.2s;">
-                                <div class="action-icon"
-                                    style="width: 44px; height: 44px; background: #dbeafe; color: #3b82f6; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
-                                    <i class="fa-solid fa-calendar-plus"></i>
-                                </div>
-                                <h3 style="font-size: 1rem; margin-bottom: 0.25rem; font-family: 'Outfit';">Schedule
-                                    Feeding</h3>
-                                <p style="font-size: 0.85rem; color: #6b7280;">Set automated meal times</p>
-                            </a>
-
-                            <a href="adoption-list-pet.php" class="quick-action-card"
-                                style="background: white; padding: 1.5rem; border-radius: 1.25rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-decoration: none; color: inherit; display: block; border: 1px solid #f3f4f6; transition: transform 0.2s;">
-                                <div class="action-icon"
-                                    style="width: 44px; height: 44px; background: #fef3c7; color: #d97706; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
-                                    <i class="fa-solid fa-house-chimney-user"></i>
-                                </div>
-                                <h3 style="font-size: 1rem; margin-bottom: 0.25rem; font-family: 'Outfit';">List Your
-                                    Pet</h3>
-                                <p style="font-size: 0.85rem; color: #6b7280;">Rehome your pet safely</p>
-                            </a>
-                        </div>
 
                         <div class="card feeding-schedule-card"
                             style="background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 2rem;">
@@ -453,7 +452,12 @@ if (!$currentReminder) {
                                             style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6;">
                                             <div>
                                                 <span
-                                                    style="font-size: 0.875rem; display: block; font-weight: 500;"><?php echo htmlspecialchars($schedule['meal_name']); ?></span>
+                                                    style="font-size: 0.875rem; display: block; font-weight: 500;">
+                                                    <?php echo htmlspecialchars($schedule['meal_name']); ?>
+                                                    <?php if(!empty($schedule['pet_name'])): ?>
+                                                        <span style="font-size:0.75rem; color:#9ca3af; font-weight:400; margin-left:4px;">(<?php echo htmlspecialchars($schedule['pet_name']); ?>)</span>
+                                                    <?php endif; ?>
+                                                </span>
                                                 <span
                                                     style="font-size: 0.75rem; color: #6b7280;"><?php echo htmlspecialchars($schedule['food_description']); ?></span>
                                             </div>
@@ -464,95 +468,6 @@ if (!$currentReminder) {
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </div>
-                        </div>
-
-                        <div class="card orders-card"
-                            style="background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                            <div class="card-header"
-                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                                <div class="icon-title" style="display: flex; align-items: center; gap: 1rem;">
-                                    <div class="icon-blue"
-                                        style="width: 40px; height: 40px; background: #e0f2fe; color: #0284c7; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
-                                        <i class="fa-solid fa-box"></i>
-                                    </div>
-                                    <h4 style="font-size: 1rem;">Recent Orders</h4>
-                                </div>
-                                <a href="my-orders.php"
-                                    style="font-size: 0.75rem; color: #3b82f6; text-decoration: none;">View All History</a>
-                            </div>
-
-                            <?php
-                            // --- AUTO-FIX: Create Table If Missing ---
-                            try {
-                                $pdo->query("SELECT 1 FROM orders LIMIT 1");
-                            } catch (PDOException $e) {
-                                include 'setup_orders_db.php';
-                            }
-
-                            // Fetch recent orders
-                            $orderStmt = $pdo->prepare("SELECT * FROM orders WHERE user_id = ? AND status != 'Cancelled' ORDER BY created_at DESC LIMIT 3");
-                            $orderStmt->execute([$user_id]);
-                            $orders = $orderStmt->fetchAll();
-
-                            if (empty($orders)): ?>
-                                <div style="text-align: center; padding: 2rem 0; color: #9ca3af;">
-                                    <i class="fa-solid fa-cart-shopping"
-                                        style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                                    <p style="font-size: 0.875rem;">No orders yet</p>
-                                </div>
-                            <?php else: ?>
-                                <div class="orders-list">
-                                    <?php foreach ($orders as $order): 
-                                        // Fetch items for this order
-                                        $itemsStmt = $pdo->prepare("
-                                            SELECT p.name 
-                                            FROM order_items oi 
-                                            JOIN products p ON oi.product_id = p.id 
-                                            WHERE oi.order_id = ? 
-                                            LIMIT 2
-                                        ");
-                                        $itemsStmt->execute([$order['id']]);
-                                        $items = $itemsStmt->fetchAll(PDO::FETCH_COLUMN);
-                                        
-                                        // Count total items to check if there are more
-                                        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM order_items WHERE order_id = ?");
-                                        $countStmt->execute([$order['id']]);
-                                        $totalItems = $countStmt->fetchColumn();
-                                        
-                                        $namesString = implode(', ', $items);
-                                        if ($totalItems > 2) {
-                                            $namesString .= ' +' . ($totalItems - 2) . ' more';
-                                        }
-                                        if (empty($namesString)) {
-                                            $namesString = "Order items";
-                                        }
-                                    ?>
-                                        <div class="order-summary-item"
-                                            style="padding: 1rem; border: 1px solid #f3f4f6; border-radius: 0.75rem; margin-bottom: 0.75rem;">
-                                            <div
-                                                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                                                <div>
-                                                    <span style="font-weight: 700; font-size: 0.95rem; display:block;">Order
-                                                        #<?php echo str_pad($order['id'], 5, '0', STR_PAD_LEFT); ?></span>
-                                                    <span style="font-size: 0.85rem; color: #4b5563; display:block; margin-top:0.25rem;">
-                                                        <?php echo htmlspecialchars($namesString); ?>
-                                                    </span>
-                                                </div>
-                                                <span
-                                                    style="font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 1rem; background: <?php echo $order['status'] == 'Processing' ? '#fef3c7' : '#dcfce7'; ?>; color: <?php echo $order['status'] == 'Processing' ? '#92400e' : '#166534'; ?>;">
-                                                    <?php echo $order['status']; ?>
-                                                </span>
-                                            </div>
-                                            <div
-                                                style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #6b7280; margin-top:0.75rem; border-top:1px dashed #e5e7eb; padding-top:0.5rem;">
-                                                <span><?php echo date('M d, Y', strtotime($order['created_at'])); ?></span>
-                                                <span
-                                                    style="font-weight: 600; color: #111827;">₹<?php echo number_format($order['total_amount'], 2); ?></span>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
                         </div>
 
                         <!-- Upcoming Appointments Section -->
@@ -585,99 +500,99 @@ if (!$currentReminder) {
                             $appointments = $apptStmt->fetchAll();
 
                             if (empty($appointments)): ?>
-                                <div style="text-align: center; padding: 2rem 0; color: #9ca3af;">
-                                    <i class="fa-regular fa-calendar-xmark"
-                                        style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                                    <p style="font-size: 0.875rem;">No upcoming appointments</p>
-                                </div>
+                                    <div style="text-align: center; padding: 2rem 0; color: #9ca3af;">
+                                        <i class="fa-regular fa-calendar-xmark"
+                                            style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                                        <p style="font-size: 0.875rem;">No upcoming appointments</p>
+                                    </div>
                             <?php else: ?>
-                                <div class="appointments-list">
-                                    <?php foreach ($appointments as $appt): 
-                                        $apptDate = new DateTime($appt['appointment_date']);
-                                        $formattedDate = $apptDate->format('M d');
-                                        $formattedTime = date('g:i A', strtotime($appt['appointment_time']));
-                                    ?>
-                                        <div class="appt-item"
-                                            style="display:flex; align-items:center; gap:1rem; padding: 1rem; border: 1px solid #f3f4f6; border-radius: 0.75rem; margin-bottom: 0.75rem;">
-                                            <!-- Date Box -->
-                                            <div style="background:#f8fafc; padding:0.5rem 0.75rem; border-radius:0.5rem; text-align:center; min-width:60px;">
-                                                <div style="font-weight:700; color:#334155; font-size:1rem;"><?php echo $apptDate->format('d'); ?></div>
-                                                <div style="font-size:0.7rem; color:#64748b; text-transform:uppercase;"><?php echo $apptDate->format('M'); ?></div>
-                                            </div>
+                                    <div class="appointments-list">
+                                        <?php foreach ($appointments as $appt):
+                                            $apptDate = new DateTime($appt['appointment_date']);
+                                            $formattedDate = $apptDate->format('M d');
+                                            $formattedTime = date('g:i A', strtotime($appt['appointment_time']));
+                                            ?>
+                                                <div class="appt-item"
+                                                    style="display:flex; align-items:center; gap:1rem; padding: 1rem; border: 1px solid #f3f4f6; border-radius: 0.75rem; margin-bottom: 0.75rem;">
+                                                    <!-- Date Box -->
+                                                    <div style="background:#f8fafc; padding:0.5rem 0.75rem; border-radius:0.5rem; text-align:center; min-width:60px;">
+                                                        <div style="font-weight:700; color:#334155; font-size:1rem;"><?php echo $apptDate->format('d'); ?></div>
+                                                        <div style="font-size:0.7rem; color:#64748b; text-transform:uppercase;"><?php echo $apptDate->format('M'); ?></div>
+                                                    </div>
                                             
-                                            <!-- Info -->
-                                            <div style="flex:1;">
-                                                <h5 style="margin:0; font-size:0.95rem; color:#1e293b;"><?php echo htmlspecialchars($appt['service_type']); ?> for <?php echo htmlspecialchars($appt['pet_name']); ?></h5>
-                                                <div style="font-size:0.8rem; color:#64748b; margin-top:0.25rem;">
-                                                    <i class="fa-solid fa-location-dot" style="color:#cbd5e1; margin-right:4px;"></i> 
-                                                    <?php echo htmlspecialchars($appt['hospital_name'] ?? 'PetCloud Partner'); ?>
+                                                    <!-- Info -->
+                                                    <div style="flex:1;">
+                                                        <h5 style="margin:0; font-size:0.95rem; color:#1e293b;"><?php echo htmlspecialchars($appt['service_type']); ?> for <?php echo htmlspecialchars($appt['pet_name']); ?></h5>
+                                                        <div style="font-size:0.8rem; color:#64748b; margin-top:0.25rem;">
+                                                            <i class="fa-solid fa-location-dot" style="color:#cbd5e1; margin-right:4px;"></i> 
+                                                            <?php echo htmlspecialchars($appt['hospital_name'] ?? 'PetCloud Partner'); ?>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Time -->
+                                                    <div style="font-size:0.85rem; font-weight:600; color:#9333ea;">
+                                                        <?php echo $formattedTime; ?>
+                                                    </div>
+
+                                                    <!-- Delete Action -->
+                                                    <form method="POST" onsubmit="return confirm('Are you sure you want to cancel this appointment?');" style="margin-left:auto;">
+                                                        <input type="hidden" name="appointment_id" value="<?php echo $appt['id']; ?>">
+                                                        <input type="hidden" name="cancel_appointment" value="1">
+                                                        <button type="submit" 
+                                                            style="background:white; border:1px solid #fee2e2; cursor:pointer; color:#ef4444; width:32px; height:32px; border-radius:0.5rem; display:flex; align-items:center; justify-content:center; transition:0.2s;"
+                                                            onmouseover="this.style.background='#fee2e2'"
+                                                            onmouseout="this.style.background='white'">
+                                                            <i class="fa-solid fa-trash-can" style="font-size:0.9rem;"></i>
+                                                        </button>
+                                                    </form>
                                                 </div>
-                                            </div>
-
-                                            <!-- Time -->
-                                            <div style="font-size:0.85rem; font-weight:600; color:#9333ea;">
-                                                <?php echo $formattedTime; ?>
-                                            </div>
-
-                                            <!-- Delete Action -->
-                                            <form method="POST" onsubmit="return confirm('Are you sure you want to cancel this appointment?');" style="margin-left:auto;">
-                                                <input type="hidden" name="appointment_id" value="<?php echo $appt['id']; ?>">
-                                                <input type="hidden" name="cancel_appointment" value="1">
-                                                <button type="submit" 
-                                                    style="background:white; border:1px solid #fee2e2; cursor:pointer; color:#ef4444; width:32px; height:32px; border-radius:0.5rem; display:flex; align-items:center; justify-content:center; transition:0.2s;"
-                                                    onmouseover="this.style.background='#fee2e2'"
-                                                    onmouseout="this.style.background='white'">
-                                                    <i class="fa-solid fa-trash-can" style="font-size:0.9rem;"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
+                                        <?php endforeach; ?>
+                                    </div>
                             <?php endif; ?>
                         </div>
 
                         <!-- My Adoption Listings Section -->
                         <?php if (!empty($myAdoptions)): ?>
-                        <div class="card adoption-status-card" 
-                            style="background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 2rem; border-left: 4px solid #10b981;">
-                            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                                <div class="icon-title" style="display: flex; align-items: center; gap: 1rem;">
-                                    <div class="icon-green" style="width: 40px; height: 40px; background: #d1fae5; color: #10b981; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
-                                        <i class="fa-solid fa-heart-pulse"></i>
+                            <div class="card adoption-status-card" 
+                                style="background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 2rem; border-left: 4px solid #10b981;">
+                                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                                    <div class="icon-title" style="display: flex; align-items: center; gap: 1rem;">
+                                        <div class="icon-green" style="width: 40px; height: 40px; background: #d1fae5; color: #10b981; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fa-solid fa-heart-pulse"></i>
+                                        </div>
+                                        <h4 style="font-size: 1rem;">My Adoption Listings</h4>
                                     </div>
-                                    <h4 style="font-size: 1rem;">My Adoption Listings</h4>
+                                    <a href="pet-rehoming.php" style="font-size: 0.75rem; color: #3b82f6; text-decoration: none;">Manage All</a>
                                 </div>
-                                <a href="pet-rehoming.php" style="font-size: 0.75rem; color: #3b82f6; text-decoration: none;">Manage All</a>
-                            </div>
 
-                            <div class="adoption-list">
-                                <?php foreach ($myAdoptions as $pet): ?>
-                                    <div class="adoption-item" style="display:flex; align-items:center; gap:1rem; padding: 1rem; border: 1px solid #f3f4f6; border-radius: 0.75rem; margin-bottom: 0.75rem;">
-                                        <img src="<?php echo htmlspecialchars($pet['image_url']); ?>" style="width: 45px; height: 45px; border-radius: 0.5rem; object-fit: cover;">
-                                        <div style="flex:1;">
-                                            <h5 style="margin:0; font-size:0.95rem; color:#1e293b;"><?php echo htmlspecialchars($pet['pet_name']); ?></h5>
-                                            <span style="font-size:0.8rem; color:#64748b;"><?php echo ucfirst($pet['pet_type']); ?> • <?php echo htmlspecialchars($pet['breed']); ?></span>
-                                        </div>
-                                        <div style="display: flex; gap: 0.5rem;">
-                                            <form method="POST">
-                                                <input type="hidden" name="listing_id" value="<?php echo $pet['id']; ?>">
-                                                <input type="hidden" name="listing_action" value="mark_adopted">
-                                                <button type="submit" title="Mark Adopted" style="background:#d1fae5; border:none; cursor:pointer; color:#10b981; width:30px; height:30px; border-radius:0.4rem; display:flex; align-items:center; justify-content:center;">
-                                                    <i class="fa-solid fa-check"></i>
-                                                </button>
-                                            </form>
-                                            <form method="POST" onsubmit="return confirm('Remove this listing from adoption?');">
-                                                <input type="hidden" name="listing_id" value="<?php echo $pet['id']; ?>">
-                                                <input type="hidden" name="listing_action" value="delete">
-                                                <button type="submit" title="Cancel Adoption" style="background:#fee2e2; border:none; cursor:pointer; color:#ef4444; width:30px; height:30px; border-radius:0.4rem; display:flex; align-items:center; justify-content:center;">
-                                                    <i class="fa-solid fa-xmark"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
+                                <div class="adoption-list">
+                                    <?php foreach ($myAdoptions as $pet): ?>
+                                            <div class="adoption-item" style="display:flex; align-items:center; gap:1rem; padding: 1rem; border: 1px solid #f3f4f6; border-radius: 0.75rem; margin-bottom: 0.75rem;">
+                                                <img src="<?php echo htmlspecialchars($pet['image_url']); ?>" style="width: 45px; height: 45px; border-radius: 0.5rem; object-fit: cover;">
+                                                <div style="flex:1;">
+                                                    <h5 style="margin:0; font-size:0.95rem; color:#1e293b;"><?php echo htmlspecialchars($pet['pet_name']); ?></h5>
+                                                    <span style="font-size:0.8rem; color:#64748b;"><?php echo ucfirst($pet['pet_type']); ?> • <?php echo htmlspecialchars($pet['breed']); ?></span>
+                                                </div>
+                                                <div style="display: flex; gap: 0.5rem;">
+                                                    <form method="POST">
+                                                        <input type="hidden" name="listing_id" value="<?php echo $pet['id']; ?>">
+                                                        <input type="hidden" name="listing_action" value="mark_adopted">
+                                                        <button type="submit" title="Mark Adopted" style="background:#d1fae5; border:none; cursor:pointer; color:#10b981; width:30px; height:30px; border-radius:0.4rem; display:flex; align-items:center; justify-content:center;">
+                                                            <i class="fa-solid fa-check"></i>
+                                                        </button>
+                                                    </form>
+                                                    <form method="POST" onsubmit="return confirm('Remove this listing from adoption?');">
+                                                        <input type="hidden" name="listing_id" value="<?php echo $pet['id']; ?>">
+                                                        <input type="hidden" name="listing_action" value="delete">
+                                                        <button type="submit" title="Cancel Adoption" style="background:#fee2e2; border:none; cursor:pointer; color:#ef4444; width:30px; height:30px; border-radius:0.4rem; display:flex; align-items:center; justify-content:center;">
+                                                            <i class="fa-solid fa-xmark"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
-                        </div>
                         <?php endif; ?>
 
                         <!-- Lost Pets Near You Section -->
@@ -699,61 +614,61 @@ if (!$currentReminder) {
                             </div>
 
                             <?php if (empty($nearbyLostPets) && empty($nearbyStrays)): ?>
-                                <div style="text-align: center; padding: 2rem 0; color: #9ca3af;">
-                                    <i class="fa-solid fa-shield-cat"
-                                        style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                                    <p style="font-size: 0.875rem;">No lost pet reports in your area. Everything looks safe!</p>
-                                </div>
+                                    <div style="text-align: center; padding: 2rem 0; color: #9ca3af;">
+                                        <i class="fa-solid fa-shield-cat"
+                                            style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                                        <p style="font-size: 0.875rem;">No lost pet reports in your area. Everything looks safe!</p>
+                                    </div>
                             <?php else: ?>
-                                <div class="nearby-lost-list">
-                                    <?php foreach ($nearbyLostPets as $lost): ?>
-                                        <div class="lost-item"
-                                            style="display:flex; align-items:center; gap:1rem; padding: 1rem; border: 1px solid #fecaca; border-radius: 0.75rem; margin-bottom: 0.75rem; background: #fffcfc;">
-                                            <img src="<?php echo htmlspecialchars($lost['pet_image']); ?>" 
-                                                style="width: 50px; height: 50px; border-radius: 0.5rem; object-fit: cover;">
+                                    <div class="nearby-lost-list">
+                                        <?php foreach ($nearbyLostPets as $lost): ?>
+                                                <div class="lost-item"
+                                                    style="display:flex; align-items:center; gap:1rem; padding: 1rem; border: 1px solid #fecaca; border-radius: 0.75rem; margin-bottom: 0.75rem; background: #fffcfc;">
+                                                    <img src="<?php echo htmlspecialchars($lost['pet_image']); ?>" 
+                                                        style="width: 50px; height: 50px; border-radius: 0.5rem; object-fit: cover;">
                                             
-                                            <div style="flex:1;">
-                                                <h5 style="margin:0; font-size:0.95rem; color:#991b1b;"><?php echo htmlspecialchars($lost['pet_name']); ?> (<?php echo htmlspecialchars($lost['pet_breed']); ?>)</h5>
-                                                <div style="font-size:0.8rem; color:#b91c1c; margin-top:0.25rem;">
-                                                    <i class="fa-solid fa-location-dot" style="margin-right:4px;"></i> 
-                                                    Lost: <?php echo htmlspecialchars($lost['last_seen_location']); ?>
+                                                    <div style="flex:1;">
+                                                        <h5 style="margin:0; font-size:0.95rem; color:#991b1b;"><?php echo htmlspecialchars($lost['pet_name']); ?> (<?php echo htmlspecialchars($lost['pet_breed']); ?>)</h5>
+                                                        <div style="font-size:0.8rem; color:#b91c1c; margin-top:0.25rem;">
+                                                            <i class="fa-solid fa-location-dot" style="margin-right:4px;"></i> 
+                                                            Lost: <?php echo htmlspecialchars($lost['last_seen_location']); ?>
+                                                        </div>
+                                                    </div>
+
+                                                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
+                                                        <?php if ($lost['user_id'] == $user_id): ?>
+                                                                <span style="font-size: 0.6rem; background: #fee2e2; color: #ef4444; padding: 2px 6px; border-radius: 4px; font-weight: 800;">YOUR REPORT</span>
+                                                        <?php endif; ?>
+                                                        <button onclick="openFoundReportModal(<?php echo $lost['id']; ?>, '<?php echo htmlspecialchars($lost['pet_name']); ?>')" 
+                                                            style="background:#ef4444; color:white; border:none; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                                                            Report Sighting
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                        <?php endforeach; ?>
 
-                                            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
-                                                <?php if ($lost['user_id'] == $user_id): ?>
-                                                    <span style="font-size: 0.6rem; background: #fee2e2; color: #ef4444; padding: 2px 6px; border-radius: 4px; font-weight: 800;">YOUR REPORT</span>
-                                                <?php endif; ?>
-                                                <button onclick="openFoundReportModal(<?php echo $lost['id']; ?>, '<?php echo htmlspecialchars($lost['pet_name']); ?>')" 
-                                                    style="background:#ef4444; color:white; border:none; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
-                                                    Report Sighting
-                                                </button>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-
-                                    <?php foreach ($nearbyStrays as $stray): ?>
-                                        <div class="lost-item"
-                                            style="display:flex; align-items:center; gap:1rem; padding: 1rem; border: 1px solid #dcfce7; border-radius: 0.75rem; margin-bottom: 0.75rem; background: #f0fdf4;">
-                                            <img src="<?php echo htmlspecialchars($stray['pet_image']); ?>" 
-                                                style="width: 50px; height: 50px; border-radius: 0.5rem; object-fit: cover;">
+                                        <?php foreach ($nearbyStrays as $stray): ?>
+                                                <div class="lost-item"
+                                                    style="display:flex; align-items:center; gap:1rem; padding: 1rem; border: 1px solid #dcfce7; border-radius: 0.75rem; margin-bottom: 0.75rem; background: #f0fdf4;">
+                                                    <img src="<?php echo htmlspecialchars($stray['pet_image']); ?>" 
+                                                        style="width: 50px; height: 50px; border-radius: 0.5rem; object-fit: cover;">
                                             
-                                            <div style="flex:1;">
-                                                <h5 style="margin:0; font-size:0.95rem; color:#166534;">Found: <?php echo htmlspecialchars($stray['pet_breed']); ?></h5>
-                                                <div style="font-size:0.8rem; color:#15803d; margin-top:0.25rem;">
-                                                    <i class="fa-solid fa-location-dot" style="margin-right:4px;"></i> 
-                                                    At: <?php echo htmlspecialchars($stray['found_location']); ?>
+                                                    <div style="flex:1;">
+                                                        <h5 style="margin:0; font-size:0.95rem; color:#166534;">Found: <?php echo htmlspecialchars($stray['pet_breed']); ?></h5>
+                                                        <div style="font-size:0.8rem; color:#15803d; margin-top:0.25rem;">
+                                                            <i class="fa-solid fa-location-dot" style="margin-right:4px;"></i> 
+                                                            At: <?php echo htmlspecialchars($stray['found_location']); ?>
+                                                        </div>
+                                                    </div>
+                                                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
+                                                        <?php if ($stray['reporter_id'] == $user_id): ?>
+                                                                <span style="font-size: 0.6rem; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-weight: 800;">YOUR REPORT</span>
+                                                        <?php endif; ?>
+                                                        <span style="font-size: 0.65rem; background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-weight: 700;">STRAY REPORT</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
-                                                <?php if ($stray['reporter_id'] == $user_id): ?>
-                                                    <span style="font-size: 0.6rem; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-weight: 800;">YOUR REPORT</span>
-                                                <?php endif; ?>
-                                                <span style="font-size: 0.65rem; background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-weight: 700;">STRAY REPORT</span>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
+                                        <?php endforeach; ?>
+                                    </div>
 <?php endif; ?>
                         </div>
                     </div>
@@ -795,52 +710,87 @@ if (!$currentReminder) {
 
                             <div class="health-metrics">
                                 <?php if (empty($upcomingHealth)): ?>
-                                    <div style="text-align: center; color: #10b981; padding: 1rem;">
-                                        <i class="fa-solid fa-check-circle"
-                                            style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
-                                        <p style="font-size: 0.9rem;">All clear! No pending health alerts.</p>
-                                    </div>
-                                <?php else: ?>
-                                    <?php foreach ($upcomingHealth as $h):
-                                        $dueDate = new DateTime($h['due_at']);
-                                        $today = new DateTime();
-                                        $diff = $today->diff($dueDate);
-                                        $daysLeft = $diff->days * ($diff->invert ? -1 : 1);
-
-                                        $color = '#10b981'; // green
-                                        $width = '100%';
-                                        $dueText = "Due in $daysLeft days";
-
-                                        if ($daysLeft < 0) {
-                                            $color = '#ef4444'; // red (overdue)
-                                            $dueText = "Overdue by " . abs($daysLeft) . " days";
-                                            $width = '100%';
-                                        } elseif ($daysLeft <= 3) {
-                                            $color = '#f59e0b'; // orange (urgent)
-                                            $width = '90%';
-                                        } elseif ($daysLeft <= 7) {
-                                            $color = '#3b82f6'; // blue
-                                            $width = '75%';
-                                        } else {
-                                            $width = '50%';
-                                        }
-                                        ?>
-                                        <div class="metric-item" style="margin-bottom: 1.5rem;">
-                                            <div class="flex justify-between text-sm mb-1"
-                                                style="display: flex; justify-content: space-between; font-size: 0.875rem; margin-bottom: 0.5rem;">
-                                                <span><?php echo htmlspecialchars($h['pet_name'] . ' - ' . $h['title']); ?></span>
-                                                <!-- Assuming title exists, or use message -->
-                                                <span
-                                                    style="color: <?php echo $color; ?>; font-weight: 700;"><?php echo $dueText; ?></span>
-                                            </div>
-                                            <div class="progress-bar-bg"
-                                                style="background: #f3f4f6; height: 8px; border-radius: 4px;">
-                                                <div class="progress-bar"
-                                                    style="width: <?php echo $width; ?>; background: <?php echo $color; ?>; height: 100%; border-radius: 4px;">
-                                                </div>
-                                            </div>
+                                        <div style="text-align: center; color: #10b981; padding: 1rem;">
+                                            <i class="fa-solid fa-check-circle"
+                                                style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                                            <p style="font-size: 0.9rem;">All clear! No pending health alerts.</p>
                                         </div>
-                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                        <?php foreach ($upcomingHealth as $h):
+                                            $dueDate = new DateTime($h['due_at']);
+                                            $today = new DateTime();
+                                            $diff = $today->diff($dueDate);
+                                            $daysLeft = $diff->days * ($diff->invert ? -1 : 1);
+
+                                            $color = '#10b981'; // green
+                                            $width = '100%';
+                                            $dueText = "Due in $daysLeft days";
+
+                                            if ($daysLeft < 0) {
+                                                $color = '#ef4444'; // red (overdue)
+                                                $dueText = "Overdue by " . abs($daysLeft) . " days";
+                                                $width = '100%';
+                                            } elseif ($daysLeft <= 3) {
+                                                $color = '#f59e0b'; // orange (urgent)
+                                                $width = '90%';
+                                            } elseif ($daysLeft <= 7) {
+                                                $color = '#3b82f6'; // blue
+                                                $width = '75%';
+                                            } else {
+                                                $width = '50%';
+                                            }
+                                            ?>
+                                                <div class="metric-item" style="margin-bottom: 1.5rem;">
+                                                    <div class="flex justify-between text-sm mb-1"
+                                                        style="display: flex; justify-content: space-between; font-size: 0.875rem; margin-bottom: 0.5rem;">
+                                                        <span><?php echo htmlspecialchars($h['pet_name'] . ' - ' . $h['title']); ?></span>
+                                                        <!-- Assuming title exists, or use message -->
+                                                        <span
+                                                            style="color: <?php echo $color; ?>; font-weight: 700;"><?php echo $dueText; ?></span>
+                                                    </div>
+                                                    <div class="progress-bar-bg"
+                                                        style="background: #f3f4f6; height: 8px; border-radius: 4px;">
+                                                        <div class="progress-bar"
+                                                            style="width: <?php echo $width; ?>; background: <?php echo $color; ?>; height: 100%; border-radius: 4px;">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                        <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <!-- Daily Tasks Card -->
+                        <div class="card daily-tasks-card"
+                            style="background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 2rem;">
+                            <div class="card-header centered-header" style="text-align: center; margin-bottom: 1.5rem;">
+                                <div class="icon-bg"
+                                    style="width: 50px; height: 50px; background: #eff6ff; color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                                    <i class="fa-solid fa-list-check"></i>
+                                </div>
+                                <h4 style="font-family: 'Outfit'; font-size: 1.1rem; margin-bottom: 0.25rem;">Daily Routine</h4>
+                                <p style="color: #6b7280; font-size: 0.85rem;">Keep on track today</p>
+                            </div>
+
+                            <div class="tasks-list">
+                                <?php if (empty($dailyTasks)): ?>
+                                        <div style="text-align: center; color: #9ca3af; padding: 1rem;">
+                                            <p style="font-size: 0.875rem;">No tasks for today.</p>
+                                            <a href="health-records.php" style="font-size: 0.8rem; color: #3b82f6;">+ Add Task</a>
+                                        </div>
+                                <?php else: ?>
+                                        <?php foreach ($dailyTasks as $task): ?>
+                                                <div class="task-item" style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center; border-bottom: 1px solid #f3f4f6; padding-bottom: 0.75rem;">
+                                                    <div class="task-check <?php echo $task['is_done'] ? 'done' : ''; ?>" style="width: 20px; height: 20px; border-radius: 6px; border: 2px solid #e5e7eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0; <?php echo $task['is_done'] ? 'background:#3b82f6; border-color:#3b82f6;' : ''; ?>">
+                                                        <?php if ($task['is_done']): ?><i class="fa-solid fa-check" style="font-size:10px; color:white;"></i><?php endif; ?>
+                                                    </div>
+                                                    <div class="task-info" style="flex: 1;">
+                                                        <h4 style="font-size: 0.9rem; margin-bottom: 0.1rem; color: #1e293b;"><?php echo htmlspecialchars($task['task_name']); ?></h4>
+                                                        <p style="font-size: 0.75rem; color: #64748b; margin:0;" class="task-time-display"><?php echo htmlspecialchars($task['task_time']); ?></p>
+                                                    </div>
+                                                </div>
+                                        <?php endforeach; ?>
+                                        <a href="health-records.php" style="display: block; text-align: center; font-size: 0.8rem; color: #3b82f6; font-weight: 600; margin-top: 1rem;">Manage Tasks</a>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -1079,7 +1029,43 @@ if (!$currentReminder) {
                 }
             });
         }
+
+        // --- NEW: Alarm System ---
+        setInterval(function() {
+             const now = new Date();
+             const currentHours = String(now.getHours()).padStart(2, '0');
+             const currentMinutes = String(now.getMinutes()).padStart(2, '0');
+             const currentTime = `${currentHours}:${currentMinutes}`;
+             
+             document.querySelectorAll('.task-time-display').forEach(tTime => {
+                 const tItem = tTime.closest('.task-item');
+                 const check = tItem.querySelector('.task-check');
+                 if(check && !check.classList.contains('done')) {
+                     const tText = tTime.innerText.trim();
+                     if(tText === currentTime) {
+                         const name = tItem.querySelector('h4').innerText;
+                         
+                         const sound = document.getElementById('alarmSound');
+                         if(sound) sound.play().catch(console.error);
+                         
+                         if(Notification.permission === "granted") {
+                             new Notification("Task Reminder! ⏰", { body: `It's time for: ${name}` });
+                         }
+                         alert(`⏰ ALARM: It's time for "${name}"!`);
+                     }
+                 }
+             });
+        }, 15000); // Check every 15s
+
+        if ("Notification" in window && Notification.permission !== "granted") {
+             Notification.requestPermission();
+        }
     </script>
+    
+    <!-- Alarm Sound -->
+    <audio id="alarmSound" preload="auto">
+        <source src="https://assets.mixkit.co/service/sfx/preview/2869.mp3" type="audio/mpeg">
+    </audio>
 </body>
 
 </html>

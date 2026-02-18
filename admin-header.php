@@ -24,13 +24,7 @@ $adminEmail = $_SESSION['admin_email'] ?? 'admin@petcloud.com';
     </div>
 
     <div style="display: flex; align-items: center; gap: 2rem;">
-        <div style="display: flex; gap: 1rem;">
-            <button style="border: none; background: none; position: relative; cursor: pointer;">
-                <i class="fa-regular fa-bell" style="font-size: 1.25rem; color: #6b7280;"></i>
-                <span
-                    style="position: absolute; top: 0; right: 0; background: #ef4444; width: 8px; height: 8px; border-radius: 50%; border: 2px solid white;"></span>
-            </button>
-        </div>
+        <!-- Notifications Removed -->
 
         <div style="display: flex; align-items: center; gap: 1rem; padding-left: 2rem; border-left: 1px solid #f3f4f6;">
             <div style="text-align: right;">

@@ -18,6 +18,8 @@
 
     <!-- CSS -->
     <link rel="stylesheet" href="css/styles.css">
+    <!-- Validation -->
+    <script src="js/form-validation.js" defer></script>
 </head>
 
 <body class="auth-page">

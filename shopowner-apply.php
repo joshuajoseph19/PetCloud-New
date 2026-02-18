@@ -16,24 +16,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $years = $_POST['years_in_business'];
     $desc = $_POST['description'];
 
-    // Check if email already applied or exists
-    $stmt = $pdo->prepare("SELECT id FROM shop_applications WHERE email = ? AND status = 'pending'");
-    $stmt->execute([$email]);
-    if ($stmt->rowCount() > 0) {
-        $error = "You already have a pending application!";
-    } else {
-        $passHash = password_hash($pass, PASSWORD_DEFAULT);
-        $sql = "INSERT INTO shop_applications (full_name, email, phone, password_hash, shop_name, business_reg, address, shop_category, years_in_business, description) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $desc = $_POST['description'];
 
-        try {
-            if ($pdo->prepare($sql)->execute([$name, $email, $phone, $passHash, $shop_name, $business_reg, $address, $category, $years, $desc])) {
-                $success = true;
-            } else {
-                $error = "Application failed. Please try again.";
+    // --- Server-Side Validation ---
+    if (empty($name) || empty($email) || empty($phone) || empty($pass) || empty($shop_name) || empty($address) || empty($category) || empty($years)) {
+        $error = "Please fill in all required fields.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "Invalid email format.";
+    } elseif (!preg_match("/^[+]?[0-9\-\s]{10,15}$/", $phone)) {
+        $error = "Invalid phone number. Please enter at least 10 digits.";
+    } else {
+        // Check if email already applied or exists
+        $stmt = $pdo->prepare("SELECT id FROM shop_applications WHERE email = ? AND status = 'pending'");
+        $stmt->execute([$email]);
+        if ($stmt->rowCount() > 0) {
+            $error = "You already have a pending application!";
+        } else {
+            $passHash = password_hash($pass, PASSWORD_DEFAULT);
+            $sql = "INSERT INTO shop_applications (full_name, email, phone, password_hash, shop_name, business_reg, address, shop_category, years_in_business, description) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+            try {
+                if ($pdo->prepare($sql)->execute([$name, $email, $phone, $passHash, $shop_name, $business_reg, $address, $category, $years, $desc])) {
+                    $success = true;
+                } else {
+                    $error = "Application failed. Please try again.";
+                }
+            } catch (PDOException $e) {
+                $error = "Database Error: " . $e->getMessage();
             }
-        } catch (PDOException $e) {
-            $error = "Database Error: " . $e->getMessage();
         }
     }
 }
@@ -45,6 +56,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shop Owner Application - PetCloud</title>
+    <!-- Combined Scripts -->
+    <script src="js/form-validation.js" defer></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

@@ -111,27 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['listing_action'])) {
 <body class="dashboard-page">
     <div class="dashboard-container">
         <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-brand"
-                style="padding: 0.5rem 1.5rem 0; display: flex; align-items: flex-start; margin-bottom: 0;">
-                <img src="images/logo.png" alt="PetCloud Logo" style="width: 180px; height: auto; object-fit: contain;">
-            </div>
-            <nav class="sidebar-nav">
-                <a href="dashboard.php" class="nav-item"><i class="fa-solid fa-table-cells-large"></i> Overview</a>
-                <a href="adoption.php" class="nav-item"><i class="fa-solid fa-heart"></i> Adoption</a>
-                <a href="pet-rehoming.php" class="nav-item active"><i class="fa-solid fa-house-chimney-user"></i> Pet
-                    Rehoming</a>
-                <a href="mypets.php" class="nav-item"><i class="fa-solid fa-paw"></i> My Pets</a>
-                <a href="smart-feeder.php" class="nav-item"><i class="fa-solid fa-microchip"></i> Smart Feeder</a>
-                <a href="schedule.php" class="nav-item"><i class="fa-regular fa-calendar"></i> Schedule</a>
-                <a href="marketplace.php" class="nav-item"><i class="fa-solid fa-bag-shopping"></i> Marketplace</a>
-                <a href="health-records.php" class="nav-item"><i class="fa-solid fa-notes-medical"></i> Health
-                    Records</a>
-            </nav>
-            <div class="sidebar-footer">
-                <a href="logout.php" class="nav-item"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
-            </div>
-        </aside>
+        <?php include 'user-sidebar.php'; ?>
 
         <main class="main-content">
             <header class="top-header">

@@ -35,9 +35,10 @@ if (isset($_POST['action']) && $_POST['action'] === 'save_schedule') {
     $time = $_POST['feeding_time'];
     $qty = $_POST['quantity'];
     $mode = $_POST['mode'];
+    $frequency = $_POST['frequency'] ?? 'Daily'; // Daily Default
 
-    $stmt = $pdo->prepare("INSERT INTO smart_feeder_schedules (user_id, pet_id, feeding_time, quantity_grams, mode) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$user_id, $pet_id, $time, $qty, $mode]);
+    $stmt = $pdo->prepare("INSERT INTO smart_feeder_schedules (user_id, pet_id, feeding_time, quantity_grams, mode, frequency) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$user_id, $pet_id, $time, $qty, $mode, $frequency]);
 
     header("Location: smart-feeder.php?msg=schedule_saved");
     exit();
@@ -216,61 +217,7 @@ $lastFeed = !empty($feedingHistory) ? date('g:i A', strtotime($feedingHistory[0]
 <body class="dashboard-page">
     <div class="dashboard-container">
         <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-brand"
-                style="padding: 0.5rem 1.5rem 0; display: flex; align-items: flex-start; margin-bottom: 0;">
-                <img src="images/logo.png" alt="PetCloud Logo" style="width: 180px; height: auto; object-fit: contain;">
-            </div>
-
-            <nav class="sidebar-nav">
-                <a href="dashboard.php" class="nav-item">
-                    <i class="fa-solid fa-house"></i> Overview
-                </a>
-                <a href="adoption.php" class="nav-item">
-                    <i class="fa-solid fa-heart"></i> Adoption
-                </a>
-                <a href="pet-rehoming.php" class="nav-item">
-                    <i class="fa-solid fa-house-chimney-user"></i> Pet Rehoming
-                </a>
-                <a href="mypets.php" class="nav-item">
-                    <i class="fa-solid fa-paw"></i> My Pets
-                </a>
-                <a href="smart-feeder.php" class="nav-item active">
-                    <i class="fa-solid fa-microchip"></i> Smart Feeder
-                </a>
-                <a href="my-orders.php" class="nav-item">
-                    <i class="fa-solid fa-bag-shopping"></i> My Orders
-                </a>
-                <a href="schedule.php" class="nav-item">
-                    <i class="fa-regular fa-calendar"></i> Schedule
-                </a>
-                <a href="marketplace.php" class="nav-item">
-                    <i class="fa-solid fa-bag-shopping"></i> Marketplace
-                </a>
-                <a href="health-records.php" class="nav-item">
-                    <i class="fa-solid fa-notes-medical"></i> Health Records
-                </a>
-                <a href="lost-pet-reports.php" class="nav-item">
-                    <i class="fa-solid fa-bullhorn"></i> Lost Pet Reports
-                </a>
-            </nav>
-
-            <div class="sidebar-footer">
-                <a href="logout.php" class="nav-item">
-                    <i class="fa-solid fa-right-from-bracket"></i> Logout
-                </a>
-                <div class="user-mini-profile">
-                    <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($user_name); ?>&background=random"
-                        alt="Profile" class="mini-avatar">
-                    <div class="mini-info">
-                        <span class="mini-name">
-                            <?php echo htmlspecialchars($user_name); ?>
-                        </span>
-                        <span class="mini-role">Premium Member</span>
-                    </div>
-                </div>
-            </div>
-        </aside>
+        <?php include 'user-sidebar.php'; ?>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -300,7 +247,8 @@ $lastFeed = !empty($feedingHistory) ? date('g:i A', strtotime($feedingHistory[0]
                                     style="padding: 1rem 1.25rem; display: flex; gap: 1rem; border-bottom: 1px solid #f8fafc; text-decoration: none; color: inherit; transition: background 0.2s;">
                                     <div class="notif-icon"
                                         style="width: 36px; height: 36px; border-radius: 50%; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                        <i class="fa-solid fa-calendar-check"></i></div>
+                                        <i class="fa-solid fa-calendar-check"></i>
+                                    </div>
                                     <div class="notif-content">
                                         <div class="notif-title"
                                             style="font-size: 0.85rem; font-weight: 600; color: #1e293b;">Upcoming
@@ -317,7 +265,8 @@ $lastFeed = !empty($feedingHistory) ? date('g:i A', strtotime($feedingHistory[0]
                                     style="padding: 1rem 1.25rem; display: flex; gap: 1rem; border-bottom: 1px solid #f8fafc; text-decoration: none; color: inherit; transition: background 0.2s;">
                                     <div class="notif-icon"
                                         style="width: 36px; height: 36px; border-radius: 50%; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                        <i class="fa-solid fa-bone"></i></div>
+                                        <i class="fa-solid fa-bone"></i>
+                                    </div>
                                     <div class="notif-content">
                                         <div class="notif-title"
                                             style="font-size: 0.85rem; font-weight: 600; color: #1e293b;">Smart Feeder
@@ -334,7 +283,8 @@ $lastFeed = !empty($feedingHistory) ? date('g:i A', strtotime($feedingHistory[0]
                                     style="padding: 1rem 1.25rem; display: flex; gap: 1rem; border-bottom: 1px solid #f8fafc; text-decoration: none; color: inherit; transition: background 0.2s;">
                                     <div class="notif-icon"
                                         style="width: 36px; height: 36px; border-radius: 50%; background: #fff1f2; color: #ef4444; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                        <i class="fa-solid fa-bullhorn"></i></div>
+                                        <i class="fa-solid fa-bullhorn"></i>
+                                    </div>
                                     <div class="notif-content">
                                         <div class="notif-title"
                                             style="font-size: 0.85rem; font-weight: 600; color: #1e293b;">Lost Pet
@@ -494,6 +444,14 @@ $lastFeed = !empty($feedingHistory) ? date('g:i A', strtotime($feedingHistory[0]
                                             <option value="Manual">One-time Schedule</option>
                                         </select>
                                     </div>
+                                    <div class="custom-form-group">
+                                        <label>Frequency (Reminder)</label>
+                                        <select name="frequency" class="custom-input">
+                                            <option value="Daily">Daily</option>
+                                            <option value="Weekly">Weekly</option>
+                                            <option value="Monthly">Monthly</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <button type="submit" class="btn"
                                     style="width: 100%; background: #10b981; color: white; padding: 1rem; border-radius: 1rem; font-weight: 700; border: none;">
@@ -575,6 +533,181 @@ $lastFeed = !empty($feedingHistory) ? date('g:i A', strtotime($feedingHistory[0]
                 }
             });
         }
+
+        // --- DAILY ALARM SYSTEM ---
+
+        // 1. Get Schedules from PHP
+        const schedules = <?php echo json_encode($activeSchedules); ?>;
+
+        // State to prevent double firing in the same minute
+        let lastTriggeredTime = null;
+
+        // 2. Audio Context for Alarm Sound
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Unlock AudioContext on first user interaction
+        document.addEventListener('click', function () {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }, { once: true });
+
+        function playAlarmSound() {
+            // Create oscillator for a "digital watch" beep
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+            osc.frequency.setValueAtTime(1760, audioCtx.currentTime + 0.1); // A6
+
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        function triggerVisualAlarm(schedule) {
+            const modal = document.getElementById('alarmModal');
+
+            if (modal) {
+                // Modal exists, append pet info
+                const list = document.getElementById('alarmPetList');
+                if (list) {
+                    // Check if pet is already in list to avoid duplicates
+                    if (!list.innerHTML.includes(schedule.pet_name)) {
+                        const item = document.createElement('div');
+                        item.style.cssText = "background: #f1f5f9; padding: 0.5rem; border-radius: 0.5rem; margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center;";
+                        item.innerHTML = `<strong>${schedule.pet_name}</strong> <span>${schedule.quantity_grams}g</span>`;
+                        list.appendChild(item);
+
+                        // Re-play sound for attention
+                        playAlarmSound();
+                    }
+                }
+                return;
+            }
+
+            // Create New Modal
+            const newModal = document.createElement('div');
+            newModal.id = 'alarmModal';
+            newModal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.8); z-index: 10000;
+                display: flex; align-items: center; justify-content: center;
+                backdrop-filter: blur(5px);
+                animation: fadeIn 0.3s ease-out;
+            `;
+
+            newModal.innerHTML = `
+                <div style="background: white; padding: 2.5rem; border-radius: 1.5rem; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                    <div style="width: 80px; height: 80px; background: #dbf4ff; color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2.5rem;">
+                        <i class="fa-solid fa-bell fa-shake"></i>
+                    </div>
+                    <h2 style="font-family: 'Outfit'; margin-bottom: 0.5rem; color: #1e293b; font-size: 1.75rem;">It's Feeding Time!</h2>
+                    <div id="alarmPetList" style="text-align: left; margin-bottom: 2rem; max-height: 200px; overflow-y: auto;">
+                        <div style="background: #f1f5f9; padding: 0.5rem; border-radius: 0.5rem; margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                            <strong>${schedule.pet_name}</strong> <span>${schedule.quantity_grams}g</span>
+                        </div>
+                    </div>
+                    <button onclick="dismissAlarm()" style="background: #3b82f6; color: white; border: none; padding: 1rem 2rem; border-radius: 1rem; font-size: 1rem; font-weight: 700; cursor: pointer; width: 100%; transition: transform 0.2s;">
+                        <i class="fa-solid fa-check"></i> Dismiss All
+                    </button>
+                    <p style="margin-top: 1rem; font-size: 0.8rem; color: #94a3b8;">Schedules repeat automatically.</p>
+                </div>
+            `;
+
+            document.body.appendChild(newModal);
+
+            // Play sound loop 3 times
+            let count = 0;
+            const interval = setInterval(() => {
+                playAlarmSound();
+                count++;
+                if (count >= 3) clearInterval(interval);
+            }, 800);
+        }
+
+        window.dismissAlarm = function () {
+            const modal = document.getElementById('alarmModal');
+            if (modal) {
+                modal.remove();
+                // Resume Audio Context if suspended (browser policy)
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            }
+        };
+
+        // 3. Polling Function
+        function checkAlarms() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const currentTime = `${hours}:${minutes}`;
+
+            // Prevent checking multiple times in the same minute if already triggered
+            if (lastTriggeredTime === currentTime) return;
+
+            schedules.forEach(schedule => {
+                // Parse Schedule Time (HH:MM)
+                const scheduleTime = schedule.feeding_time.substring(0, 5);
+
+                // 1. Time Check
+                if (currentTime !== scheduleTime) return;
+
+                // 2. Frequency Check
+                let shouldTrigger = false;
+                const freq = schedule.frequency || 'Daily'; // Default to Daily
+
+                if (freq === 'Daily') {
+                    shouldTrigger = true;
+                } else if (freq === 'Weekly') {
+                    // Check if today is the same day of week as created_at
+                    const createdDate = new Date(schedule.created_at.replace(" ", "T"));
+                    if (now.getDay() === createdDate.getDay()) {
+                        shouldTrigger = true;
+                    }
+                } else if (freq === 'Monthly') {
+                    // Check if today is the same date as created_at
+                    const createdDate = new Date(schedule.created_at.replace(" ", "T"));
+                    if (now.getDate() === createdDate.getDate()) {
+                        shouldTrigger = true;
+                    }
+                }
+
+                if (shouldTrigger) {
+                    console.log(`ALARM TRIGGERED (${freq}) for ` + schedule.pet_name);
+                    triggerVisualAlarm(schedule);
+                    lastTriggeredTime = currentTime;
+                }
+            });
+        }
+
+        // Check every second to be precise, but logic handles minute-debounce
+        setInterval(checkAlarms, 1000);
+
+        // Animation Styles
+        const styleSheet = document.createElement("style");
+        styleSheet.textContent = `
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+            .fa-shake { animation: shake 1s infinite; }
+            @keyframes shake {
+                0% { transform: rotate(0deg); }
+                25% { transform: rotate(15deg); }
+                50% { transform: rotate(0deg); }
+                75% { transform: rotate(-15deg); }
+                100% { transform: rotate(0deg); }
+            }
+        `;
+        document.head.appendChild(styleSheet);
+
+
     </script>
 </body>
 
