@@ -47,24 +47,7 @@ try {
     }
 }
 
-// Seed all pets if empty
-$count = $pdo->prepare("SELECT COUNT(*) FROM user_pets WHERE user_id = ?");
-$count->execute([$user_id]);
-if ($count->fetchColumn() == 0) {
-    $demoPets = [
-        ['Rocky', 'Golden Retriever', '1.5 Years', 'Dog', 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=600', 'Female', '5.4 kg', 'Rocky is a friendly and energetic Golden Retriever who loves long walks and playing fetch.'],
-        ['Luna', 'Tabby', '8 Months', 'Cat', 'https://images.unsplash.com/photo-1495360010541-f48722b34f7d?w=600', 'Female', '2.7 kg', 'Luna is a sweet and curious kitten who loves to cuddle.'],
-        ['Daisy', 'Dwarf Rabbit', '2 Years', 'Rabbit', 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?w=600', 'Female', '1.4 kg', 'Daisy is a gentle and quiet rabbit who enjoys munching on carrots and hay.'],
-        ['Rio', 'Parrot', '1 Year', 'Bird', 'https://images.unsplash.com/photo-1552728089-57bdde30beb3?w=600', 'Male', '0.5 kg', 'Rio is a very intelligent and talkative Parrot who loves to whistle.'],
-        ['Max', 'Beagle', '3 Years', 'Dog', 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=600', 'Male', '9.1 kg', 'Max is a classic Beagle with an amazing sense of smell and a friendly heart.'],
-        ['Simba', 'Ginger Tabby', '2 Years', 'Cat', 'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=600', 'Male', '4.5 kg', 'Simba is a majestic ginger cat who thinks he is the king of the house.']
-    ];
-
-    $insert = $pdo->prepare("INSERT INTO user_pets (user_id, pet_name, pet_breed, pet_age, pet_type, pet_image, pet_gender, pet_weight, pet_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    foreach ($demoPets as $p) {
-        $insert->execute(array_merge([$user_id], $p));
-    }
-}
+// Demo seeding removed. User starts with 0 pets.
 
 // --- Handle Add Pet Form ---
 if ($_SERVER["REQUEST_METHOD"] == "POST") {

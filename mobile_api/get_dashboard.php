@@ -111,6 +111,24 @@ try {
     $stmt->execute([$user_id]);
     $dailyTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // 10. Found Pet Reports (Sightings of USER'S lost pets)
+    $stmt = $pdo->prepare("
+        SELECT fr.*, p.pet_name, p.pet_image, u.full_name as reporter_name, lpa.pet_id
+        FROM found_pet_reports fr
+        JOIN lost_pet_alerts lpa ON fr.alert_id = lpa.id
+        JOIN user_pets p ON lpa.pet_id = p.id
+        JOIN users u ON fr.user_id = u.id
+        WHERE lpa.user_id = ? AND lpa.status = 'Active'
+        ORDER BY fr.created_at DESC
+    ");
+    $stmt->execute([$user_id]);
+    $lostPetReports = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // 11. My Orders (Recent)
+    $stmt = $pdo->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY order_date DESC LIMIT 10");
+    $stmt->execute([$user_id]);
+    $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
     echo json_encode([
         'success' => true,
         'user' => $user,
@@ -121,7 +139,9 @@ try {
         'reminders' => $reminders,
         'nearbyLostPets' => $nearbyLostPets,
         'nearbyStrays' => $nearbyStrays,
-        'dailyTasks' => $dailyTasks
+        'dailyTasks' => $dailyTasks,
+        'orders' => $orders,
+        'lostPetReports' => $lostPetReports
     ]);
 
 } catch (PDOException $e) {

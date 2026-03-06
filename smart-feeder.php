@@ -22,8 +22,18 @@ if (isset($_POST['action']) && $_POST['action'] === 'manual_feed') {
     $pet_id = $_POST['pet_id'];
     $qty = $_POST['quantity'];
 
+    // 1) Update dashboard "Recent Activity" (feeding_logs)
     $stmt = $pdo->prepare("INSERT INTO feeding_logs (user_id, pet_id, quantity_grams, status, message) VALUES (?, ?, ?, 'Success', 'Manual feeding triggered from dashboard')");
     $stmt->execute([$user_id, $pet_id, $qty]);
+
+    // 2) Send command to ESP32 (feed_commands)
+    $device_id = 'esp32_1';
+    $stmtCmd = $pdo->prepare("INSERT INTO feed_commands (device_id, portion_qty, status) VALUES (?, ?, 'pending')");
+    $stmtCmd->execute([$device_id, $qty]);
+
+    // 3) Update "Last fed" display immediately (feed_logs)
+    $stmtFeedLog = $pdo->prepare("INSERT INTO feed_logs (device_id, `portion`) VALUES (?, ?)");
+    $stmtFeedLog->execute([$device_id, $qty]);
 
     header("Location: smart-feeder.php?msg=manual_success");
     exit();
@@ -264,7 +274,7 @@ $deviceStatus = "Online";
                     <div class="feeder-left">
                         <div class="minimal-card">
                             <div
-                                style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 2rem;">
+                                style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
                                 <div>
                                     <h3 class="section-title" style="margin-bottom: 0.25rem;">Feeder Terminal</h3>
                                     <p style="color: var(--text-muted); font-size: 0.9rem;">Direct hardware control</p>
@@ -272,6 +282,16 @@ $deviceStatus = "Online";
                                 <div class="status-badge">
                                     <div class="dot"></div> ONLINE
                                 </div>
+                            </div>
+
+                            <div
+                                style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 0.75rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 500;">
+                                <div style="color: var(--text-main);"><i class="fa-solid fa-clock"
+                                        style="color: var(--primary); margin-right: 0.5rem;"></i><span
+                                        id="lastFedText">Last fed: --</span></div>
+                                <div style="color: var(--text-main);"><i class="fa-solid fa-bowl-food"
+                                        style="color: var(--primary); margin-right: 0.5rem;"></i><span
+                                        id="lastPortionText">Last portion: --</span></div>
                             </div>
 
                             <form action="" method="POST">
@@ -290,21 +310,21 @@ $deviceStatus = "Online";
 
                                 <label class="form-label">Portion Size</label>
                                 <div class="portion-grid">
-                                    <label class="portion-option">
+                                    <label class="portion-option portionBtn" data-portion="30">
                                         <input type="radio" name="quantity" value="30" checked>
                                         <div class="portion-card">
                                             <div style="font-weight: 700;">Small</div>
                                             <div style="font-size: 0.8rem; opacity: 0.7;">30g</div>
                                         </div>
                                     </label>
-                                    <label class="portion-option">
+                                    <label class="portion-option portionBtn" data-portion="60">
                                         <input type="radio" name="quantity" value="60">
                                         <div class="portion-card">
                                             <div style="font-weight: 700;">Medium</div>
                                             <div style="font-size: 0.8rem; opacity: 0.7;">60g</div>
                                         </div>
                                     </label>
-                                    <label class="portion-option">
+                                    <label class="portion-option portionBtn" data-portion="100">
                                         <input type="radio" name="quantity" value="100">
                                         <div class="portion-card">
                                             <div style="font-weight: 700;">Large</div>
@@ -315,7 +335,7 @@ $deviceStatus = "Online";
 
 
 
-                                <button type="submit" class="btn-feed">
+                                <button type="submit" class="btn-feed" id="feedBtn">
                                     <i class="fa-solid fa-bolt"></i> FEED NOW
                                 </button>
                             </form>
@@ -337,7 +357,8 @@ $deviceStatus = "Online";
                                         <select name="pet_id" class="input-minimal" required>
                                             <?php foreach ($myPets as $pet): ?>
                                                 <option value="<?php echo $pet['id']; ?>">
-                                                    <?php echo htmlspecialchars($pet['pet_name']); ?></option>
+                                                    <?php echo htmlspecialchars($pet['pet_name']); ?>
+                                                </option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
@@ -348,8 +369,8 @@ $deviceStatus = "Online";
                                 </div>
                                 <div style="margin-bottom: 1.5rem;">
                                     <label class="form-label">Portion (Grams)</label>
-                                    <input type="number" name="quantity" class="input-minimal" value="40" min="10"
-                                        step="10">
+                                    <input type="number" id="portionInput" name="quantity" class="input-minimal"
+                                        value="40" min="10" step="10">
                                 </div>
                                 <button type="submit" class="btn"
                                     style="width:100%; padding: 1rem; border-radius: 0.75rem; background: var(--text-main); color: white; border: none; font-weight: 600; cursor: pointer;">
@@ -371,13 +392,16 @@ $deviceStatus = "Online";
                                         <li class="history-item">
                                             <div>
                                                 <div style="font-weight: 600; font-size: 0.95rem;">
-                                                    <?php echo htmlspecialchars($log['pet_name']); ?></div>
+                                                    <?php echo htmlspecialchars($log['pet_name']); ?>
+                                                </div>
                                                 <div style="font-size: 0.75rem; color: var(--text-muted);">
-                                                    <?php echo date('M d, g:i A', strtotime($log['feeding_time'])); ?></div>
+                                                    <?php echo date('M d, g:i A', strtotime($log['feeding_time'])); ?>
+                                                </div>
                                             </div>
                                             <div style="text-align: right;">
                                                 <div style="font-weight: 700; color: var(--text-main);">
-                                                    <?php echo $log['quantity_grams']; ?>g</div>
+                                                    <?php echo $log['quantity_grams']; ?>g
+                                                </div>
                                                 <div
                                                     style="font-size: 0.7rem; font-weight: 700; border-radius: 4px; padding: 2px 6px; background: #dcfce7; color: #166534; display: inline-block;">
                                                     SUCCESS</div>
@@ -414,6 +438,39 @@ $deviceStatus = "Online";
             });
         }
         setInterval(checkAlarms, 10000);
+    </script>
+    <script>
+        // Portion Selection Logic
+        document.querySelectorAll('.portionBtn input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                const portion = this.closest('.portionBtn').getAttribute('data-portion');
+                const input = document.getElementById('portionInput');
+                if (input) {
+                    input.value = portion;
+                }
+            });
+        });
+        // Last Feed Tracker Fetch Logic
+        function fetchLastFeed() {
+            fetch('api/get_last_feed.php?device_id=esp32_1')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.ok) {
+                        if (data.fed_at) {
+                            document.getElementById('lastFedText').innerText = `Last fed: ${data.fed_at}`;
+                            document.getElementById('lastPortionText').innerText = `Last portion: ${data.portion}g`;
+                        } else {
+                            document.getElementById('lastFedText').innerText = 'Last fed: Not yet';
+                            document.getElementById('lastPortionText').innerText = 'Last portion: --';
+                        }
+                    }
+                })
+                .catch(err => console.error('Error fetching last feed:', err));
+        }
+
+        // Fetch on load, then every 5 seconds
+        fetchLastFeed();
+        setInterval(fetchLastFeed, 5000);
     </script>
 </body>
 

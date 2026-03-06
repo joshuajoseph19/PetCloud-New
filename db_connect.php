@@ -15,6 +15,10 @@ try {
     // Set default fetch mode
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
+    // Set correct timezone
+    date_default_timezone_set('Asia/Kolkata');
+    $pdo->exec("SET time_zone = '+05:30'");
+
 } catch (PDOException $e) {
     // If this is an API request (implied by JSON header usually, but here we can just ensure valid JSON if it fails)
     // We strive to return JSON error if possible, but db_connect is included by pages too.
