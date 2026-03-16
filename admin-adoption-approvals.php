@@ -28,95 +28,172 @@ $stmt = $pdo->query("SELECT l.*, u.full_name as owner_name, u.email as owner_ema
                      ORDER BY l.created_at DESC");
 $pending = $stmt->fetchAll();
 ?>
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>Adoption Approvals - Admin</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adoption Approvals - Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --primary: #10b981;
+            --sidebar: #111827;
+            --bg: #f8fafc;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: 'Outfit', sans-serif;
-            background: #f3f4f6;
-            padding: 2rem;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: #1e293b;
         }
 
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
+        .main-layout {
+            margin-left: 260px;
+            padding: 2.5rem;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .header {
+        .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
         }
 
-        .card {
-            background: white;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            display: flex;
+        .page-title {
+            font-family: 'Outfit';
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .approval-grid {
+            display: grid;
+            grid-template-columns: 1fr;
             gap: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .approval-card {
+            background: white;
+            border-radius: 1.5rem;
+            border: 1px solid #e5e7eb;
+            padding: 1.5rem;
+            display: flex;
+            gap: 2rem;
+            transition: 0.3s;
+        }
+
+        .approval-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        }
+
+        .pet-media {
+            flex-shrink: 0;
+            width: 220px;
+            height: 220px;
+            border-radius: 1rem;
+            overflow: hidden;
+            background: #f1f5f9;
         }
 
         .pet-img {
-            width: 150px;
-            height: 150px;
+            width: 100%;
+            height: 100%;
             object-fit: cover;
-            border-radius: 0.75rem;
-            background: #eee;
         }
 
-        .content {
+        .pet-details {
             flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        .badges {
+        .pet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .pet-name {
+            font-family: 'Outfit';
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.25rem;
+        }
+
+        .owner-info {
+            font-size: 0.875rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .owner-info i { color: var(--primary); }
+
+        .tag-row {
             display: flex;
             gap: 0.5rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1.25rem;
         }
 
         .badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
+            padding: 4px 12px;
+            border-radius: 99px;
             font-size: 0.75rem;
-            font-weight: 600;
-            background: #e5e7eb;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: #f1f5f9;
+            color: #475569;
         }
 
-        .actions {
+        .description-box {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 1rem;
+            font-size: 0.9375rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            border: 1px solid #f1f5f9;
+        }
+
+        .action-row {
+            margin-top: auto;
             display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            justify-content: center;
-            min-width: 120px;
+            gap: 1rem;
         }
 
         .btn {
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 0.875rem;
             cursor: pointer;
-            font-weight: 600;
-            text-align: center;
             text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
             transition: 0.2s;
+            border: none;
         }
 
         .btn-approve {
-            background: #10b981;
+            background: var(--primary);
             color: white;
         }
 
         .btn-approve:hover {
-            background: #059669;
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
         }
 
         .btn-reject {
@@ -126,71 +203,101 @@ $pending = $stmt->fetchAll();
 
         .btn-reject:hover {
             background: #fecaca;
+            transform: translateY(-2px);
         }
 
         .empty-state {
+            background: white;
+            border-radius: 2rem;
+            padding: 5rem 2rem;
             text-align: center;
-            padding: 4rem;
-            color: #6b7280;
+            border: 1px dashed #cbd5e1;
+        }
+
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            background: #d1fae5;
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout { margin-left: 0; padding: 1.5rem; }
+            .approval-card { flex-direction: column; }
+            .pet-media { width: 100%; height: 250px; }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Adoption Approvals</h1>
-            <a href="admin-dashboard.php" class="btn" style="background:white; color:#374151;">Back to Dashboard</a>
+
+    <?php include 'admin-sidebar.php'; ?>
+    <?php include 'admin-header.php'; ?>
+
+    <main class="main-layout">
+        <div class="page-header">
+            <h2 class="page-title">Adoption Listing Approvals</h2>
+            <div class="badge" style="background: #fef3c7; color: #b45309;">
+                <?php echo count($pending); ?> Pending Review
+            </div>
         </div>
 
         <?php if (empty($pending)): ?>
-            <div class="card empty-state">
-                <i class="fa-solid fa-check-circle" style="font-size: 3rem; margin-bottom: 1rem; color: #10b981;"></i>
-                <h2>All Caught Up!</h2>
-                <p>No pending adoption listings at the moment.</p>
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fa-solid fa-check-double"></i>
+                </div>
+                <h2 style="font-family: 'Outfit'; margin-bottom: 0.5rem;">All Caught Up!</h2>
+                <p style="color: #64748b;">There are no new adoption listings waiting for approval.</p>
             </div>
         <?php else: ?>
-            <?php foreach ($pending as $item): ?>
-                <div class="card">
-                    <img src="<?php echo htmlspecialchars($item['image_url']); ?>" class="pet-img">
-                    <div class="content">
-                        <div class="badges">
-                            <span class="badge">
-                                <?php echo ucfirst($item['pet_type']); ?>
-                            </span>
-                            <span class="badge">
-                                <?php echo htmlspecialchars($item['gender']); ?>
-                            </span>
+            <div class="approval-grid">
+                <?php foreach ($pending as $item): ?>
+                    <div class="approval-card">
+                        <div class="pet-media">
+                            <img src="<?php echo htmlspecialchars($item['image_url']); ?>" class="pet-img" alt="Pet Image">
                         </div>
-                        <h2 style="margin-bottom: 0.25rem;">
-                            <?php echo htmlspecialchars($item['pet_name']); ?>
-                        </h2>
-                        <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">
-                            Posted by <strong>
-                                <?php echo htmlspecialchars($item['owner_name']); ?>
-                            </strong> (
-                            <?php echo htmlspecialchars($item['owner_email']); ?>)
-                        </p>
+                        <div class="pet-details">
+                            <div class="pet-header">
+                                <div>
+                                    <h3 class="pet-name"><?php echo htmlspecialchars($item['pet_name']); ?></h3>
+                                    <div class="owner-info">
+                                        <i class="fa-solid fa-user-circle"></i>
+                                        <span>Posted by <strong><?php echo htmlspecialchars($item['owner_name']); ?></strong> (<?php echo htmlspecialchars($item['owner_email']); ?>)</span>
+                                    </div>
+                                </div>
+                                <div class="tag-row">
+                                    <span class="badge"><?php echo ucfirst($item['pet_type']); ?></span>
+                                    <span class="badge"><?php echo htmlspecialchars($item['gender']); ?></span>
+                                </div>
+                            </div>
 
-                        <div style="background: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                            <p style="font-size: 0.9rem; margin-bottom: 0.5rem;"><strong>Description:</strong>
-                                <?php echo htmlspecialchars($item['description']); ?>
-                            </p>
-                            <p style="font-size: 0.9rem; color: #ef4444;"><strong>Reason:</strong>
-                                <?php echo htmlspecialchars($item['reason_for_adoption']); ?>
-                            </p>
+                            <div class="description-box">
+                                <p style="margin-bottom: 0.75rem;"><strong>Statement:</strong> <?php echo htmlspecialchars($item['description']); ?></p>
+                                <p style="color: #ef4444; font-weight: 600;"><strong>Reason for Adoption:</strong> <?php echo htmlspecialchars($item['reason_for_adoption']); ?></p>
+                            </div>
+
+                            <div class="action-row">
+                                <a href="?action=approve&id=<?php echo $item['id']; ?>" class="btn btn-approve">
+                                    <i class="fa-solid fa-check"></i> Approve Listing
+                                </a>
+                                <a href="?action=reject&id=<?php echo $item['id']; ?>" class="btn btn-reject">
+                                    <i class="fa-solid fa-xmark"></i> Reject
+                                </a>
+                            </div>
                         </div>
                     </div>
-                    <div class="actions">
-                        <a href="?action=approve&id=<?php echo $item['id']; ?>" class="btn btn-approve"><i
-                                class="fa-solid fa-check"></i> Approve</a>
-                        <a href="?action=reject&id=<?php echo $item['id']; ?>" class="btn btn-reject"><i
-                                class="fa-solid fa-xmark"></i> Reject</a>
-                    </div>
-                </div>
-            <?php endforeach; ?>
+                <?php endforeach; ?>
+            </div>
         <?php endif; ?>
-    </div>
+    </main>
+
 </body>
 
-</html>
+</html>
