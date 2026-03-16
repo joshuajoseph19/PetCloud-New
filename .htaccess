@@ -1,0 +1,7 @@
+# Prevent directory listing
+Options -Indexes
+
+# Custom Error Pages
+# Redirect 403 Forbidden to custom page
+# ErrorDocument 403 /PetCloud/403.php
+# ErrorDocument 404 /PetCloud/403.php

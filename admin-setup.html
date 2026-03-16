@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Setup - PetCloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 1rem;
+            padding: 3rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 2rem;
+        }
+
+        .step {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .step-number {
+            background: #3b82f6;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+
+        .step h3 {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .code-box {
+            background: #1f2937;
+            color: #10b981;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+
+        .warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .success {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 0.875rem 2rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1><i class="fa-solid fa-shield-halved" style="color: #3b82f6;"></i> Admin Account Setup</h1>
+        <p class="subtitle">Follow these steps to create the admin account in your database</p>
+
+        <div class="warning">
+            <strong><i class="fa-solid fa-exclamation-triangle"></i> Important:</strong> You must complete these steps
+            for admin login to work!
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">1</span> Open phpMyAdmin</h3>
+            <p>Go to: <a href="http://localhost/phpmyadmin" target="_blank"
+                    style="color: #3b82f6; font-weight: 600;">http://localhost/phpmyadmin</a></p>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">2</span> Select Your Database</h3>
+            <p>Click on <strong>petcloud_db</strong> (or your database name) from the left sidebar</p>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">3</span> Go to SQL Tab</h3>
+            <p>Click the <strong>SQL</strong> tab at the top of the page</p>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">4</span> Copy & Run This SQL</h3>
+            <p>Copy the code below and paste it into the SQL box, then click <strong>Go</strong></p>
+
+            <div class="code-box">
+                -- First, add role column if it doesn't exist<br>
+                ALTER TABLE `users` ADD COLUMN `role` VARCHAR(20) DEFAULT 'client' AFTER `profile_pic`;<br>
+                <br>
+                -- Delete existing admin if any<br>
+                DELETE FROM `users` WHERE email = 'admin@gmail.com';<br>
+                <br>
+                -- Create admin user<br>
+                INSERT INTO `users` (`full_name`, `email`, `password_hash`, `role`, `created_at`) <br>
+                VALUES <br>
+                ('System Administrator', 'admin@gmail.com',
+                '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', NOW());<br>
+                <br>
+                -- Verify<br>
+                SELECT * FROM users WHERE email = 'admin@gmail.com';
+            </div>
+
+            <p style="margin-top: 1rem; color: #6b7280; font-size: 0.875rem;">
+                <i class="fa-solid fa-info-circle"></i> If you get an error about duplicate column, that's OK! It means
+                the role column already exists.
+            </p>
+        </div>
+
+        <div class="success">
+            <strong><i class="fa-solid fa-check-circle"></i> After Running SQL:</strong><br>
+            You can login with:<br>
+            <strong>Email:</strong> admin@gmail.com<br>
+            <strong>Password:</strong> admin
+        </div>
+
+        <div style="text-align: center; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
+            <a href="admin-login.html" class="btn-primary">
+                <i class="fa-solid fa-arrow-right"></i> Go to Admin Login
+            </a>
+        </div>
+
+        <p style="text-align: center; margin-top: 2rem; color: #9ca3af; font-size: 0.875rem;">
+            Need help? The SQL file is also saved as <code>setup_admin.sql</code> in your project folder
+        </p>
+    </div>
+</body>
+
+</html>

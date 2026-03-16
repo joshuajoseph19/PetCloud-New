@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Setup - PetCloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 1rem;
+            padding: 3rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 2rem;
+            font-size: 1.125rem;
+        }
+
+        .alert {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .alert h2 {
+            color: #991b1b;
+            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+        }
+
+        .step {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .step-number {
+            background: #f59e0b;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 1rem;
+            font-size: 1.125rem;
+        }
+
+        .step h3 {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            font-size: 1.125rem;
+        }
+
+        .code-box {
+            background: #1f2937;
+            color: #10b981;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            line-height: 1.6;
+        }
+
+        .success {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin: 2rem 0;
+        }
+
+        .success h3 {
+            color: #065f46;
+            margin-bottom: 0.75rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #2563eb;
+        }
+
+        .info-box {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1><i class="fa-solid fa-database" style="color: #f59e0b;"></i> Database Setup Required</h1>
+        <p class="subtitle">Your database is not set up yet. Follow these steps to get started.</p>
+
+        <div class="alert">
+            <h2><i class="fa-solid fa-exclamation-triangle"></i> Database Not Found!</h2>
+            <p>The admin login failed because the database connection is not working. You need to set up the database
+                first.</p>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">1</span> Make Sure XAMPP is Running</h3>
+            <ul style="margin-left: 3rem; color: #4b5563;">
+                <li style="margin-bottom: 0.5rem;">Open XAMPP Control Panel</li>
+                <li style="margin-bottom: 0.5rem;">Start <strong>Apache</strong></li>
+                <li style="margin-bottom: 0.5rem;">Start <strong>MySQL</strong></li>
+                <li>Both should show green "Running" status</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">2</span> Open phpMyAdmin</h3>
+            <p style="margin-left: 3rem;">Click this link: <a href="http://localhost/phpmyadmin" target="_blank"
+                    style="color: #3b82f6; font-weight: 600;">http://localhost/phpmyadmin</a></p>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">3</span> Create Database & Admin User</h3>
+            <p style="margin-left: 3rem; margin-bottom: 1rem;">In phpMyAdmin:</p>
+            <ol style="margin-left: 4.5rem; color: #4b5563;">
+                <li style="margin-bottom: 0.5rem;">Click the <strong>SQL</strong> tab at the top</li>
+                <li style="margin-bottom: 0.5rem;">Copy ALL the code below</li>
+                <li style="margin-bottom: 0.5rem;">Paste it into the SQL box</li>
+                <li>Click <strong>Go</strong> button</li>
+            </ol>
+
+            <div class="code-box">-- Create database<br>
+                CREATE DATABASE IF NOT EXISTS `petcloud_db` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;<br>
+                <br>
+                USE `petcloud_db`;<br>
+                <br>
+                -- Create users table<br>
+                CREATE TABLE IF NOT EXISTS `users` (<br>
+                &nbsp;&nbsp;`id` int(11) NOT NULL AUTO_INCREMENT,<br>
+                &nbsp;&nbsp;`full_name` varchar(255) NOT NULL,<br>
+                &nbsp;&nbsp;`email` varchar(255) NOT NULL UNIQUE,<br>
+                &nbsp;&nbsp;`password_hash` varchar(255) NOT NULL,<br>
+                &nbsp;&nbsp;`google_id` varchar(255) DEFAULT NULL,<br>
+                &nbsp;&nbsp;`profile_pic` varchar(500) DEFAULT NULL,<br>
+                &nbsp;&nbsp;`role` varchar(20) DEFAULT 'client',<br>
+                &nbsp;&nbsp;`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,<br>
+                &nbsp;&nbsp;PRIMARY KEY (`id`),<br>
+                &nbsp;&nbsp;KEY `email` (`email`),<br>
+                &nbsp;&nbsp;KEY `role` (`role`)<br>
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;<br>
+                <br>
+                -- Create admin user<br>
+                INSERT INTO `users` (`full_name`, `email`, `password_hash`, `role`, `created_at`) <br>
+                VALUES <br>
+                ('System Administrator', 'admin@gmail.com',
+                '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', NOW())<br>
+                ON DUPLICATE KEY UPDATE <br>
+                `password_hash` = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',<br>
+                `role` = 'admin';<br>
+                <br>
+                -- Verify<br>
+                SELECT 'Setup complete!' as message, email, role FROM users WHERE email = 'admin@gmail.com';
+            </div>
+
+            <div class="info-box">
+                <i class="fa-solid fa-info-circle"></i> This SQL is also saved in <code>database_setup.sql</code> file
+                in your project folder
+            </div>
+        </div>
+
+        <div class="success">
+            <h3><i class="fa-solid fa-check-circle"></i> After Running the SQL</h3>
+            <p style="color: #065f46; margin-bottom: 1rem;">You should see a success message. Now you can login with:
+            </p>
+            <div style="background: white; padding: 1rem; border-radius: 0.5rem; font-family: monospace;">
+                <strong>Email:</strong> admin@gmail.com<br>
+                <strong>Password:</strong> admin
+            </div>
+        </div>
+
+        <div style="text-align: center; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
+            <a href="http://localhost/phpmyadmin" target="_blank" class="btn btn-primary">
+                <i class="fa-solid fa-database"></i> Open phpMyAdmin
+            </a>
+            <a href="admin-login.html" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-right"></i> Go to Admin Login
+            </a>
+        </div>
+
+        <p style="text-align: center; margin-top: 2rem; color: #9ca3af; font-size: 0.875rem;">
+            <i class="fa-solid fa-question-circle"></i> Still having issues? Make sure MySQL is running in XAMPP
+        </p>
+    </div>
+</body>
+
+</html>

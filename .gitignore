@@ -1,0 +1,60 @@
+# Mobile App
+PetCloudApp/node_modules/
+PetCloudApp/.expo/
+PetCloudApp/web-build/
+PetCloudApp/dist/
+PetCloudApp/build/
+PetCloudApp/.env*
+
+# PHP Backend / Logs
+*.log
+login_debug.log
+recovery_log.txt
+tmp_*.txt
+analysis_output.txt
+analysis_results.txt
+recovery_*.txt
+recovery_log.txt
+
+# Development / Debug Scripts
+test_*.php
+debug_*.php
+check_*.php
+repair_*.php
+setup_*.php
+recreate_*.php
+migrate_*.php
+fix_*.php
+master_recovery*.php
+analyze_system*.php
+describe_*.php
+list_*.php
+populate_*.php
+seed_*.php
+sync_*.php
+update_*.php
+verify_*.php
+Cloud_import.php
+hello.php
+run_sql.php
+db_cleanup.php
+
+# Documentation / External
+*.docx
+WEIGHT_CONVERSION_SUMMARY.md
+WEIGHT_IMPLEMENTATION.md
+QUICK_START_GUIDE.md
+
+# System / IDE
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+.agent/
+.gemini/
+.env
+
+# Dependencies
+node_modules/
+vendor/

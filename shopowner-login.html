@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop Owner Login - PetCloud</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .login-box {
+            max-width: 450px;
+            width: 100%;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            padding: 3rem 2.5rem;
+        }
+
+        .shop-badge {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            color: #6b7280;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.875rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .login-btn:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        #error-msg,
+        #success-msg {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+
+        #error-msg {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        #success-msg {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .link-text {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .link-text a {
+            color: #3b82f6;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-box">
+        <span class="shop-badge">
+            <i class="fa-solid fa-store"></i> SHOP OWNER PORTAL
+        </span>
+
+        <h1>Shop Owner Login</h1>
+        <p>Access your shop dashboard and manage products</p>
+
+        <div id="error-msg"></div>
+        <div id="success-msg"></div>
+
+        <form id="shopowner-login-form">
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="email" placeholder="your@email.com" required>
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="Enter password" required>
+            </div>
+
+            <button type="submit" class="login-btn">
+                <i class="fa-solid fa-sign-in-alt"></i> Login to Dashboard
+            </button>
+        </form>
+
+        <div class="link-text">
+            <a href="shopowner-apply.html">
+                <i class="fa-solid fa-file-alt"></i> New application?
+            </a> |
+            <a href="index.html">Back to Client Login</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('shopowner-login-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-msg');
+            const successMsg = document.getElementById('success-msg');
+
+            // Hide previous messages
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+
+            // Get all shop owner applications
+            const applications = JSON.parse(localStorage.getItem('shopowner_applications') || '[]');
+            const shopOwner = applications.find(app => app.email === email && app.password === password);
+
+            if (!shopOwner) {
+                errorMsg.textContent = 'Invalid email or password!';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            if (shopOwner.status === 'pending') {
+                errorMsg.textContent = 'Your application is still pending approval. Please wait for admin confirmation.';
+                errorMsg.style.display = 'block';
+
+                // Redirect to status page after 2 seconds
+                setTimeout(() => {
+                    localStorage.setItem('pending_shopowner_email', email);
+                    window.location.href = 'shopowner-status.html';
+                }, 2000);
+                return;
+            }
+
+            if (shopOwner.status === 'approved') {
+                successMsg.textContent = 'Login successful! Redirecting to dashboard...';
+                successMsg.style.display = 'block';
+
+                // Store session
+                localStorage.setItem('shopowner_logged_in', 'true');
+                localStorage.setItem('shopowner_email', email);
+                localStorage.setItem('shopowner_data', JSON.stringify(shopOwner));
+
+                // Redirect to shop owner dashboard
+                setTimeout(() => {
+                    window.location.href = 'shopowner-dashboard.html';
+                }, 1500);
+            }
+        });
+    </script>
+</body>
+
+</html>

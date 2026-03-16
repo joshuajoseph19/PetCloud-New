@@ -1,0 +1,10 @@
+node_modules
+PetCloudApp
+.git
+.expo
+*.docx
+*.md
+analysis_output.txt
+login_debug.log
+recovery_log.txt
+tmp_*.txt

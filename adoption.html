@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adopt a Pet - PetCloud</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/adoption-styles.css">
+</head>
+
+<body>
+    <!-- Navigation Header -->
+    <header class="adoption-header">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <img src="images/logo.png" alt="PetCloud Logo"
+                        style="height: 60px; width: auto; object-fit: contain;">
+                </div>
+                <nav class="main-nav">
+                    <a href="dashboard.html">Home</a>
+                    <a href="adoption.html" class="active">Adopt</a>
+                    <a href="#">Volunteer</a>
+                    <a href="#">Donate</a>
+                </nav>
+                <div class="header-actions">
+                    <a href="dashboard.html" class="btn btn-outline">
+                        <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    <button class="btn btn-outline">Log In</button>
+                    <button class="btn btn-primary">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="adoption-hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Make a New Friend,<br><span class="highlight">Save a Life Today.</span></h1>
+                <p>Thousands of homeless pets are waiting for a loving family. Browse our listings and find the perfect
+                    companion for your lifestyle.</p>
+
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <div class="search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="pet-search" placeholder="Search by name, breed, or trait...">
+                        <button class="search-btn">Find Pet</button>
+                    </div>
+                </div>
+
+                <!-- Filter Tags -->
+                <div class="pet-filters">
+                    <button class="filter-tag active" data-filter="all">
+                        <i class="fa-solid fa-paw"></i> All
+                    </button>
+                    <button class="filter-tag" data-filter="dog">
+                        <i class="fa-solid fa-dog"></i> Dogs
+                    </button>
+                    <button class="filter-tag" data-filter="cat">
+                        <i class="fa-solid fa-cat"></i> Cats
+                    </button>
+                    <button class="filter-tag" data-filter="small">
+                        <i class="fa-solid fa-rabbit"></i> Small Pets
+                    </button>
+                    <button class="filter-tag" data-filter="other">
+                        <i class="fa-solid fa-feather"></i> Others
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Available Pets Section -->
+    <section class="pets-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Available Pets</h2>
+                <div class="sort-dropdown">
+                    <span>Showing: <strong id="showing-text">Newest Arrivals</strong></span>
+                </div>
+            </div>
+
+            <div class="pets-grid" id="pets-grid">
+                <!-- Pet Card 1 -->
+                <div class="pet-card" data-type="dog">
+                    <div class="pet-image">
+                        <img src="https://images.unsplash.com/photo-1633722715463-d30f4f325e24?w=400&h=400&fit=crop"
+                            alt="Bella">
+                        <span class="location-badge"><i class="fa-solid fa-location-dot"></i> Maryland</span>
+                        <button class="favorite-btn"><i class="fa-regular fa-heart"></i></button>
+                    </div>
+                    <div class="pet-info">
+                        <h3>Bella</h3>
+                        <p class="pet-meta">Golden • 2 years</p>
+                        <div class="pet-traits">
+                            <span class="trait">Playful</span>
+                            <span class="trait">Good with kids</span>
+                        </div>
+                        <button class="adopt-btn">Adopt Bella <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- Pet Card 2 -->
+                <div class="pet-card" data-type="cat">
+                    <div class="pet-image">
+                        <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400&h=400&fit=crop"
+                            alt="Luna">
+                        <span class="location-badge"><i class="fa-solid fa-location-dot"></i> Nearby</span>
+                        <button class="favorite-btn"><i class="fa-regular fa-heart"></i></button>
+                    </div>
+                    <div class="pet-info">
+                        <h3>Luna</h3>
+                        <p class="pet-meta">Cat • 11 mos</p>
+                        <div class="pet-traits">
+                            <span class="trait">Calm</span>
+                            <span class="trait">Indoor only</span>
+                        </div>
+                        <button class="adopt-btn">Adopt Luna <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- Pet Card 3 -->
+                <div class="pet-card" data-type="dog">
+                    <div class="pet-image">
+                        <img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=400&fit=crop"
+                            alt="Max">
+                        <img src="https://images.unsplash.com/photo-1600077106724-946750eeaf8c?w=400&h=400&fit=crop"
+                            alt="Max">
+                        <span class="location-badge"><i class="fa-solid fa-location-dot"></i> Fairfield</span>
+                        <button class="favorite-btn"><i class="fa-regular fa-heart"></i></button>
+                    </div>
+                    <div class="pet-info">
+                        <h3>Max</h3>
+                        <p class="pet-meta">Beagle • 1 yr 2 mos</p>
+                        <div class="pet-traits">
+                            <span class="trait">Friendly</span>
+                            <span class="trait">Energetic</span>
+                        </div>
+                        <button class="adopt-btn">Adopt Max <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- Pet Card 4 -->
+                <div class="pet-card" data-type="small">
+                    <div class="pet-image">
+                        <img src="https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?w=400&h=400&fit=crop"
+                            alt="Daisy">
+                        <span class="location-badge"><i class="fa-solid fa-location-dot"></i> Stamford</span>
+                        <button class="favorite-btn"><i class="fa-regular fa-heart"></i></button>
+                    </div>
+                    <div class="pet-info">
+                        <h3>Daisy</h3>
+                        <p class="pet-meta">Rabbit • 6 mos</p>
+                        <div class="pet-traits">
+                            <span class="trait">Quiet</span>
+                            <span class="trait">Gentle</span>
+                        </div>
+                        <button class="adopt-btn">Adopt Daisy <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- Pet Card 5 -->
+                <div class="pet-card" data-type="cat">
+                    <div class="pet-image">
+                        <img src="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=400&fit=crop"
+                            alt="Oscar">
+                        <span class="location-badge"><i class="fa-solid fa-location-dot"></i> Maryland</span>
+                        <button class="favorite-btn"><i class="fa-regular fa-heart"></i></button>
+                    </div>
+                    <div class="pet-info">
+                        <h3>Oscar</h3>
+                        <p class="pet-meta">Tabby • 3 yrs</p>
+                        <div class="pet-traits">
+                            <span class="trait">Playful</span>
+                            <span class="trait">Lap cat</span>
+                        </div>
+                        <button class="adopt-btn">Adopt Oscar <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- Pet Card 6 -->
+                <div class="pet-card" data-type="dog">
+                    <div class="pet-image">
+                        <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&h=400&fit=crop"
+                            alt="Rocky">
+                        <span class="location-badge"><i class="fa-solid fa-location-dot"></i> Nearby</span>
+                        <button class="favorite-btn"><i class="fa-regular fa-heart"></i></button>
+                    </div>
+                    <div class="pet-info">
+                        <h3>Rocky</h3>
+                        <p class="pet-meta">German Shepherd • 4 yrs</p>
+                        <div class="pet-traits">
+                            <span class="trait">Loyal</span>
+                            <span class="trait">Active</span>
+                        </div>
+                        <button class="adopt-btn">Adopt Rocky <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- Pet Card 7 -->
+                <div class="pet-card" data-type="other">
+                    <div class="pet-image">
+                        <img src="https://images.unsplash.com/photo-1552728089-57bdde30beb3?w=400&h=400&fit=crop"
+                            alt="Rio">
+                        <span class="location-badge"><i class="fa-solid fa-location-dot"></i> Fairfield</span>
+                        <button class="favorite-btn"><i class="fa-regular fa-heart"></i></button>
+                    </div>
+                    <div class="pet-info">
+                        <h3>Rio</h3>
+                        <p class="pet-meta">Parrot • 2 yrs 3 mos</p>
+                        <div class="pet-traits">
+                            <span class="trait">Vocal</span>
+                            <span class="trait">Intelligent</span>
+                        </div>
+                        <button class="adopt-btn">Adopt Rio <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- Pet Card 8 -->
+                <div class="pet-card" data-type="dog">
+                    <div class="pet-image">
+                        <img src="https://images.unsplash.com/photo-1568572933382-74d440642117?w=400&h=400&fit=crop"
+                            alt="Koda">
+                        <span class="location-badge"><i class="fa-solid fa-location-dot"></i> Nearby</span>
+                        <button class="favorite-btn"><i class="fa-regular fa-heart"></i></button>
+                    </div>
+                    <div class="pet-info">
+                        <h3>Koda</h3>
+                        <p class="pet-meta">Husky • 22 mos</p>
+                        <div class="pet-traits">
+                            <span class="trait">Independent</span>
+                            <span class="trait">Vocal</span>
+                        </div>
+                        <button class="adopt-btn">Adopt Koda <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="load-more-container">
+                <p class="showing-count">Showing 8 of 92 available pets</p>
+                <button class="btn btn-outline load-more-btn">Load More Pets <i
+                        class="fa-solid fa-chevron-down"></i></button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Not Ready Section -->
+    <section class="not-ready-section">
+        <div class="container">
+            <h2>Not ready to adopt?</h2>
+            <p>You can still help! Donate to our cause or foster a pet for a short time.</p>
+            <div class="cta-buttons">
+                <button class="btn btn-primary">Donate Now</button>
+                <button class="btn btn-outline">Become a Foster</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="adoption-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div class="footer-logo">
+                        <img src="images/logo.png" alt="PetCloud Logo"
+                            style="height: 50px; width: auto; object-fit: contain;">
+                    </div>
+                    <p>Connecting loving homes with pets in need of a second chance at happiness.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Adopt</h4>
+                    <a href="#">Dogs</a>
+                    <a href="#">Cats</a>
+                    <a href="#">Rabbits</a>
+                    <a href="#">Others</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Company</h4>
+                    <a href="#">About Us</a>
+                    <a href="#">Volunteer</a>
+                    <a href="#">Success Stories</a>
+                    <a href="#">Contact</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Support</h4>
+                    <a href="#">Help Center</a>
+                    <a href="#">Adoption FAQ</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 PetCloud. All rights reserved.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/adoption.js"></script>
+</body>
+
+</html>

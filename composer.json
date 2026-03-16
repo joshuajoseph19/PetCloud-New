@@ -1,0 +1,7 @@
+{
+    "name": "joshuajoseph/petcloud",
+    "description": "PetCloud PHP Backend",
+    "require": {
+        "php": ">=7.4"
+    }
+}
