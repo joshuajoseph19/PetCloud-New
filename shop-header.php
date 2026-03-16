@@ -18,7 +18,7 @@
             <?php
             $stmt = $pdo->prepare("SELECT COUNT(*) FROM shop_notifications WHERE shop_id = ? AND is_read = 0");
             $stmt->execute([$shop_id ?? 0]);
-            $notifCount = $stmt->fetchColumn();
+            $notifCount = $stmt->fetchColumn() ?: 0;
             if ($notifCount > 0): ?>
                 <span class="notification-badge"><?php echo $notifCount; ?></span>
             <?php endif; ?>
@@ -30,7 +30,7 @@
                     <?php echo htmlspecialchars($user_name); ?>
                 </div>
                 <div class="user-shop-text">
-                    <?php echo htmlspecialchars($shopName); ?>
+                    <?php echo htmlspecialchars($shopName ?? 'Shop Owner'); ?>
                 </div>
             </div>
             <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($user_name); ?>&background=4f46e5&color=fff"

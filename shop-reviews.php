@@ -41,7 +41,8 @@ $reviews = $stmt->fetchAll();
 // Calculate average rating
 $stmtAvg = $pdo->prepare("SELECT AVG(rating) FROM product_reviews r JOIN products p ON r.product_id = p.id WHERE p.shop_id = ?");
 $stmtAvg->execute([$shop_id]);
-$avgRating = round($stmtAvg->fetchColumn(), 1) ?: "0.0";
+$rawAvg = $stmtAvg->fetchColumn();
+$avgRating = $rawAvg ? round((float)$rawAvg, 1) : "0.0";
 
 ?>
 <!DOCTYPE html>

@@ -9,12 +9,17 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'shop_owner') {
 }
 
 $user_id = $_SESSION['user_id'];
+$user_email = $_SESSION['user_email'];
 $user_name = $_SESSION['user_name'];
 
+// Fetch Shop Details
+$stmt = $pdo->prepare("SELECT * FROM shop_applications WHERE email = ? AND status = 'approved' LIMIT 1");
+$stmt->execute([$user_email]);
+$shop = $stmt->fetch();
+$shop_id = $shop['id'] ?? 0;
+$shopName = $shop['shop_name'] ?? 'Shop Owner';
+
 // Fetch Listings for this user (who is a shop owner)
-// We still use user_id because the listing is linked to the account creating it.
-// If your schema strictly separates shop listings via shop_id, you might need to fetch shop_id first.
-// For now, let's assume listings are tied to user_id even for shop owners, or we check both if we implemented shop_id logic.
 $stmt = $pdo->prepare("SELECT * FROM adoption_listings WHERE user_id = ? ORDER BY created_at DESC");
 $stmt->execute([$user_id]);
 $myListings = $stmt->fetchAll();

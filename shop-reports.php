@@ -20,13 +20,14 @@ $shopName = $shop['shop_name'];
 
 // 1. Monthly Revenue Data (Last 6 Months)
 $stmt = $pdo->prepare("SELECT DATE_FORMAT(o.created_at, '%b %Y') as month, 
-                             SUM(oi.price_at_purchase * oi.quantity) as revenue
+                             SUM(oi.price_at_purchase * oi.quantity) as revenue,
+                             DATE_FORMAT(o.created_at, '%Y-%m') as sort_month
                       FROM orders o
                       JOIN order_items oi ON o.id = oi.order_id
                       JOIN products p ON oi.product_id = p.id
                       WHERE p.shop_id = ? AND o.status != 'Cancelled'
-                      GROUP BY month
-                      ORDER BY o.created_at ASC
+                      GROUP BY month, sort_month
+                      ORDER BY sort_month ASC
                       LIMIT 6");
 $stmt->execute([$shop_id]);
 $revenueData = $stmt->fetchAll();
