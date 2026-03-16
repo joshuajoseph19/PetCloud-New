@@ -182,7 +182,20 @@ foreach ($cartItems as $item) {
                     <?php else: ?>
                         <?php foreach ($cartItems as $item): ?>
                             <div class="cart-item">
-                                <img src="<?php echo htmlspecialchars($item['image_url']); ?>" class="item-img" alt="Product">
+                                <?php
+                                // Image fallback logic matching marketplace.php
+                                $workingImages = [
+                                    'Bird Seed Mix' => 'images/bird_feed.webp',
+                                    'Chew Bone' => 'images/chew_bone.jpg',
+                                    'Pet Vitamin Supplements' => 'images/Pet Vitamin Supplements.webp',
+                                    'Comfort Pet Bed' => 'images/Comfort Pet Bed.webp',
+                                    'Interactive Cat Toy' => 'images/cat_toy.jpg',
+                                    'Premium Dog Food' => 'images/premium_dog_food.webp',
+                                    'Puppy Food' => 'images/puppy_food.avif'
+                                ];
+                                $img = $workingImages[$item['name']] ?? $item['image_url'];
+                                ?>
+                                <img src="<?php echo htmlspecialchars($img ?? ''); ?>" class="item-img" alt="Product">
                                 <div class="item-details">
                                     <h3 style="font-family: 'Outfit'; margin-bottom: 0.25rem;">
                                         <?php echo htmlspecialchars($item['name']); ?>

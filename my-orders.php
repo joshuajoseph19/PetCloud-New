@@ -157,11 +157,24 @@ $orders = $stmt->fetchAll();
 
                                 foreach ($items as $item):
                                     ?>
+                                    <?php
+                                    // Image fallback logic matching marketplace.php
+                                    $workingImages = [
+                                        'Bird Seed Mix' => 'images/bird_feed.webp',
+                                        'Chew Bone' => 'images/chew_bone.jpg',
+                                        'Pet Vitamin Supplements' => 'images/Pet Vitamin Supplements.webp',
+                                        'Comfort Pet Bed' => 'images/Comfort Pet Bed.webp',
+                                        'Interactive Cat Toy' => 'images/cat_toy.jpg',
+                                        'Premium Dog Food' => 'images/premium_dog_food.webp',
+                                        'Puppy Food' => 'images/puppy_food.avif'
+                                    ];
+                                    $img = $workingImages[$item['name']] ?? $item['image_url'];
+                                    ?>
                                     <div class="item-row">
-                                        <img src="<?php echo htmlspecialchars($item['image_url']); ?>" class="item-image">
+                                        <img src="<?php echo htmlspecialchars($img ?? ''); ?>" class="item-image">
                                         <div style="flex: 1;">
                                             <h4 style="margin-bottom: 0.25rem;">
-                                                <?php echo htmlspecialchars($item['name']); ?>
+                                                <?php echo htmlspecialchars($item['name'] ?? 'Product'); ?>
                                             </h4>
                                             <span style="color: #6b7280; font-size: 0.9rem;">Quantity:
                                                 <?php echo $item['quantity']; ?>
@@ -180,7 +193,7 @@ $orders = $stmt->fetchAll();
                                     <div style="font-size: 0.85rem; color: #6b7280;">Payment Method</div>
                                     <div style="font-weight: 600; font-size: 0.95rem; color: #10b981;">
                                         <i class="fa-solid fa-shield-check"></i> Razorpay (ID:
-                                        <?php echo htmlspecialchars($order['payment_id']); ?>)
+                                        <?php echo htmlspecialchars($order['payment_id'] ?? 'N/A'); ?>)
                                     </div>
                                 </div>
                                 <div style="text-align: right;">

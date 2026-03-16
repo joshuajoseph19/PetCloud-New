@@ -344,7 +344,20 @@ if (!$success && empty($cartItems)) {
                 <?php foreach ($cartItems as $item): ?>
                     <div class="order-item">
                         <div style="display: flex; align-items: center; gap: 1rem;">
-                            <img src="<?php echo htmlspecialchars($item['image_url']); ?>"
+                            <?php
+                            // Image fallback logic matching marketplace.php
+                            $workingImages = [
+                                'Bird Seed Mix' => 'images/bird_feed.webp',
+                                'Chew Bone' => 'images/chew_bone.jpg',
+                                'Pet Vitamin Supplements' => 'images/Pet Vitamin Supplements.webp',
+                                'Comfort Pet Bed' => 'images/Comfort Pet Bed.webp',
+                                'Interactive Cat Toy' => 'images/cat_toy.jpg',
+                                'Premium Dog Food' => 'images/premium_dog_food.webp',
+                                'Puppy Food' => 'images/puppy_food.avif'
+                            ];
+                            $img = $workingImages[$item['name']] ?? $item['image_url'];
+                            ?>
+                            <img src="<?php echo htmlspecialchars($img ?? ''); ?>"
                                 style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;">
                             <div>
                                 <div style="font-weight: 600; font-size: 0.9rem;"><?php echo htmlspecialchars($item['name']); ?>

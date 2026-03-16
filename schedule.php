@@ -365,7 +365,7 @@ foreach ($appointments as $a) {
                                         <div style="flex:1;">
                                             <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
                                                 <h3 style="font-family:'Outfit'; font-size:1.1rem; margin:0; color:#1e293b;">
-                                                    <?php echo htmlspecialchars($appt['title']); ?>
+                                                    <?php echo htmlspecialchars($appt['title'] ?? ''); ?>
                                                 </h3>
                                                 <?php if ($isPast): ?>
                                                     <span
