@@ -424,11 +424,13 @@ a {
 /* Sidebar */
 .sidebar {
     width: 260px;
+    height: 100vh;
     background: white;
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
     padding: 1.5rem;
+    overflow: hidden;
 }
 
 .sidebar-brand {
@@ -467,6 +469,22 @@ a {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #e2e8f0 transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background-color: #e2e8f0;
+    border-radius: 4px;
 }
 
 .nav-item {
