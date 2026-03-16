@@ -7,11 +7,11 @@
 // SMTP Server Settings
 define('SMTP_HOST', 'smtp.gmail.com');
 define('SMTP_PORT', 587); // 587 for TLS, 465 for SSL
-define('SMTP_USERNAME', 'petcloud.official@gmail.com');
-define('SMTP_PASSWORD', 'xxxx xxxx xxxx xxxx'); // Replace with Gmail App Password
+define('SMTP_USERNAME', 'joshuajoseph0310@gmail.com');
+define('SMTP_PASSWORD', 'kilducuhfsqkrrba'); // App Password
 
 // Sender Information
-define('SMTP_FROM_EMAIL', 'petcloud.official@gmail.com');
+define('SMTP_FROM_EMAIL', 'joshuajoseph0310@gmail.com');
 define('SMTP_FROM_NAME', 'PetCloud Support');
 
 /**
