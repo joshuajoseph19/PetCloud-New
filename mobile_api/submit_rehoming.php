@@ -4,6 +4,7 @@ header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Accept');
 header('Content-Type: application/json');
 require_once '../db_connect.php';
+require_once '../cloudinary_helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -67,19 +68,11 @@ try {
     }
 
     $primaryImage = null;
-    // Handle simplified "image data" if base64 logic is added, or standard $_FILES
+    // Handle image upload via Cloudinary
     if (isset($_FILES['primary_image']) && $_FILES['primary_image']['error'] === UPLOAD_ERR_OK) {
-        $uploadDir = '../uploads/rehoming/';
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
-
-        $fileExtension = pathinfo($_FILES['primary_image']['name'], PATHINFO_EXTENSION);
-        $fileName = uniqid('pet_') . '.' . $fileExtension;
-        $uploadPath = $uploadDir . $fileName;
-
-        if (move_uploaded_file($_FILES['primary_image']['tmp_name'], $uploadPath)) {
-            $primaryImage = 'uploads/rehoming/' . $fileName;
+        $cloudUrl = uploadToCloudinary($_FILES['primary_image']['tmp_name'], 'petcloud/rehoming');
+        if ($cloudUrl) {
+            $primaryImage = $cloudUrl;
         }
     }
 

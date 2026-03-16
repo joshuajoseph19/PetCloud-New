@@ -1,4 +1,4 @@
-// Database configuration (Migrated to Aiven Cloud)
+<?php
 // Database configuration (Using Environment Variables for Security)
 $host = getenv('DB_HOST') ?: 'mysql-2f4ee15-mca-9b42.f.aivencloud.com';
 $port = getenv('DB_PORT') ?: '17032';

@@ -10,6 +10,7 @@ header('Access-Control-Allow-Origin: *');
 // Disable display errors to prevent HTML appending to JSON output
 ini_set('display_errors', 0);
 require_once '../db_connect.php';
+require_once '../cloudinary_helper.php';
 session_start();
 
 try {
@@ -77,21 +78,12 @@ try {
         }
     }
 
-    // Handle image upload
+    // Handle image upload via Cloudinary
     $primaryImage = null;
     if (isset($_FILES['primary_image']) && $_FILES['primary_image']['error'] === UPLOAD_ERR_OK) {
-        $uploadDir = '../uploads/rehoming/';
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
-
-        $fileExtension = pathinfo($_FILES['primary_image']['name'], PATHINFO_EXTENSION);
-        $fileName = uniqid('pet_') . '.' . $fileExtension;
-        $uploadPath = $uploadDir . $fileName;
-
-        if (move_uploaded_file($_FILES['primary_image']['tmp_name'], $uploadPath)) {
-            // Store relative path in DB
-            $primaryImage = 'uploads/rehoming/' . $fileName;
+        $cloudUrl = uploadToCloudinary($_FILES['primary_image']['tmp_name'], 'petcloud/rehoming');
+        if ($cloudUrl) {
+            $primaryImage = $cloudUrl;
         }
     }
 

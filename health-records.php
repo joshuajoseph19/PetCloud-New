@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'db_connect.php';
+require_once 'cloudinary_helper.php';
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
@@ -18,19 +19,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_record'])) {
     $date = $_POST['record_date'];
     $desc = $_POST['description'];
 
-    // File Upload Handling
+    // File Upload Handling (Cloudinary)
     $docPath = null;
     if (isset($_FILES['health_doc']) && $_FILES['health_doc']['error'] == 0) {
-        $uploadDir = 'uploads/health_docs/';
-        if (!is_dir($uploadDir))
-            mkdir($uploadDir, 0777, true);
-        $fileName = time() . '_' . basename($_FILES['health_doc']['name']);
-        $targetFile = $uploadDir . $fileName;
-        $fileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
-        if (in_array($fileType, ['jpg', 'jpeg', 'png', 'pdf'])) {
-            if (move_uploaded_file($_FILES['health_doc']['tmp_name'], $targetFile)) {
-                $docPath = $targetFile;
-            }
+        $cloudUrl = uploadToCloudinary($_FILES['health_doc']['tmp_name'], 'petcloud/health_docs');
+        if ($cloudUrl) {
+            $docPath = $cloudUrl;
         }
     }
 
@@ -49,13 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_memory'])) {
 
     $imgPath = null;
     if (isset($_FILES['memory_image']) && $_FILES['memory_image']['error'] == 0) {
-        $uploadDir = 'uploads/memories/';
-        if (!is_dir($uploadDir))
-            mkdir($uploadDir, 0777, true);
-        $fileName = time() . '_' . basename($_FILES['memory_image']['name']);
-        $targetFile = $uploadDir . $fileName;
-        if (move_uploaded_file($_FILES['memory_image']['tmp_name'], $targetFile)) {
-            $imgPath = $targetFile;
+        $cloudUrl = uploadToCloudinary($_FILES['memory_image']['tmp_name'], 'petcloud/memories');
+        if ($cloudUrl) {
+            $imgPath = $cloudUrl;
         }
     }
 

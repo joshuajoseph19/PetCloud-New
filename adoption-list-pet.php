@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'db_connect.php';
+require_once 'cloudinary_helper.php';
 
 // Ensure user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -24,16 +25,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Image Upload Handling (Simplified for MVP)
     $imageUrl = 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=600'; // Default fallback
 
+    // Image Upload (Cloudinary)
     if (isset($_FILES['pet_image']) && $_FILES['pet_image']['error'] === 0) {
-        $uploadDir = 'images/uploads/';
-        if (!is_dir($uploadDir))
-            mkdir($uploadDir, 0777, true);
-
-        $fileName = time() . '_' . basename($_FILES['pet_image']['name']);
-        $targetPath = $uploadDir . $fileName;
-
-        if (move_uploaded_file($_FILES['pet_image']['tmp_name'], $targetPath)) {
-            $imageUrl = $targetPath;
+        $cloudUrl = uploadToCloudinary($_FILES['pet_image']['tmp_name'], 'petcloud/adoption');
+        if ($cloudUrl) {
+            $imageUrl = $cloudUrl;
         }
     }
 

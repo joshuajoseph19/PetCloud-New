@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'db_connect.php';
+require_once 'cloudinary_helper.php';
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
@@ -57,25 +58,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $age = $_POST['pet_age'];
         $type = $_POST['pet_type'];
 
-        // Handle Image Upload
+        // Handle Image Upload (Cloudinary)
         $image = "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop"; // Default
 
         if (isset($_FILES['pet_image']) && $_FILES['pet_image']['error'] == 0) {
-            $target_dir = "images/uploads/pets/";
-            if (!file_exists($target_dir)) {
-                mkdir($target_dir, 0777, true);
-            }
-
-            $file_extension = strtolower(pathinfo($_FILES["pet_image"]["name"], PATHINFO_EXTENSION));
-            $allowed_types = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-
-            if (in_array($file_extension, $allowed_types)) {
-                $new_filename = uniqid('pet_') . '.' . $file_extension;
-                $target_file = $target_dir . $new_filename;
-
-                if (move_uploaded_file($_FILES["pet_image"]["tmp_name"], $target_file)) {
-                    $image = $target_file;
-                }
+            $cloudUrl = uploadToCloudinary($_FILES['pet_image']['tmp_name'], 'petcloud/pets');
+            if ($cloudUrl) {
+                $image = $cloudUrl;
             }
         }
 
@@ -112,20 +101,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $desc = $_POST['pet_description'];
 
         try {
-            // Check for new image
+            // Check for new image (Cloudinary)
             $image_sql = "";
             $image_params = [];
             if (isset($_FILES['pet_image']) && $_FILES['pet_image']['error'] == 0) {
-                $target_dir = "images/uploads/pets/";
-                if (!file_exists($target_dir)) {
-                    mkdir($target_dir, 0777, true);
-                }
-                $file_extension = strtolower(pathinfo($_FILES["pet_image"]["name"], PATHINFO_EXTENSION));
-                $new_filename = uniqid('pet_u_') . '.' . $file_extension;
-                $target_file = $target_dir . $new_filename;
-                if (move_uploaded_file($_FILES["pet_image"]["tmp_name"], $target_file)) {
+                $cloudUrl = uploadToCloudinary($_FILES['pet_image']['tmp_name'], 'petcloud/pets');
+                if ($cloudUrl) {
                     $image_sql = ", pet_image=?";
-                    $image_params[] = $target_file;
+                    $image_params[] = $cloudUrl;
                 }
             }
 

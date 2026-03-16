@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'db_connect.php';
+require_once 'cloudinary_helper.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'shop_owner') {
     header("Location: index.php");
@@ -33,24 +34,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Default image
     $img = 'https://images.unsplash.com/photo-1583512676605-934c25b412f8?w=600';
 
-    // Handle File Upload
+    // Handle File Upload (Cloudinary)
     if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] == 0) {
-        $target_dir = "images/uploads/";
-        if (!file_exists($target_dir)) {
-            mkdir($target_dir, 0777, true);
-        }
-
         $file_extension = strtolower(pathinfo($_FILES["product_image"]["name"], PATHINFO_EXTENSION));
         $allowed_types = ['jpg', 'jpeg', 'png', 'webp'];
 
         if (in_array($file_extension, $allowed_types)) {
-            $new_filename = uniqid('prod_') . '.' . $file_extension;
-            $target_file = $target_dir . $new_filename;
-
-            if (move_uploaded_file($_FILES["product_image"]["tmp_name"], $target_file)) {
-                $img = $target_file;
+            $cloudUrl = uploadToCloudinary($_FILES['product_image']['tmp_name'], 'petcloud/products');
+            if ($cloudUrl) {
+                $img = $cloudUrl;
             } else {
-                $error = "Failed to upload image.";
+                $error = "Failed to upload image to cloud. Please try again.";
             }
         } else {
             $error = "Invalid file type. Only JPG, PNG, and WEBP are allowed.";
