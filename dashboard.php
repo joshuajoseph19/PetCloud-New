@@ -462,7 +462,7 @@ if (!$currentReminder) {
                                                     <?php endif; ?>
                                                 </span>
                                                 <span
-                                                    style="font-size: 0.75rem; color: #6b7280;"><?php echo htmlspecialchars($schedule['food_description']); ?></span>
+                                                    style="font-size: 0.75rem; color: #6b7280;"><?php echo htmlspecialchars($schedule['food_description'] ?? ''); ?></span>
                                             </div>
                                             <span style="font-size: 0.875rem; color: #10b981; font-weight: 600;">
                                                 <?php echo date('g:i A', strtotime($schedule['feeding_time'])); ?>
@@ -525,7 +525,7 @@ if (!$currentReminder) {
                                             
                                                     <!-- Info -->
                                                     <div style="flex:1;">
-                                                        <h5 style="margin:0; font-size:0.95rem; color:#1e293b;"><?php echo htmlspecialchars($appt['service_type']); ?> for <?php echo htmlspecialchars($appt['pet_name']); ?></h5>
+                                                        <h5 style="margin:0; font-size:0.95rem; color:#1e293b;"><?php echo htmlspecialchars($appt['service_type'] ?? 'Checkup'); ?> for <?php echo htmlspecialchars($appt['pet_name'] ?? 'Pet'); ?></h5>
                                                         <div style="font-size:0.8rem; color:#64748b; margin-top:0.25rem;">
                                                             <i class="fa-solid fa-location-dot" style="color:#cbd5e1; margin-right:4px;"></i> 
                                                             <?php echo htmlspecialchars($appt['hospital_name'] ?? 'PetCloud Partner'); ?>
@@ -741,13 +741,13 @@ if (!$currentReminder) {
                         </div>
 
                         <div class="card health-status-card"
-                            style="background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                            <div class="card-header centered-header" style="text-align: center; margin-bottom: 1.5rem;">
+                            style="background: white; padding: 1.25rem 1rem; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: auto; min-height: 100px;">
+                            <div class="card-header centered-header" style="text-align: center; margin-bottom: 1rem;">
                                 <div class="heart-icon-bg"
-                                    style="width: 50px; height: 50px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
-                                    <i class="fa-solid fa-heart"></i>
+                                    style="width: 40px; height: 40px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem;">
+                                    <i class="fa-solid fa-heart" style="font-size: 0.9rem;"></i>
                                 </div>
-                                <h4>Health Status</h4>
+                                <h4 style="font-size: 0.95rem; margin-bottom: 0;">Health Status</h4>
                             </div>
 
                             <div class="health-metrics">
