@@ -31,7 +31,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $pdo->prepare($sql)->execute([$email, $token, $expires]);
 
         // Create Reset Link
-        $resetLink = "http://localhost/PetCloud/reset-password.php?token=" . $token;
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
+        $host = $_SERVER['HTTP_HOST'];
+        $resetLink = "$protocol://$host/reset-password.php?token=" . $token;
 
         // Send Email using PHPMailer
         $mail = new PHPMailer(true);

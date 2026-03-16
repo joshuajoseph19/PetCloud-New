@@ -126,7 +126,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="input-group">
                     <div class="flex justify-between items-center mb-2">
                         <label class="input-label" style="margin-bottom: 0;">Password</label>
-                        <a href="forgot-password.html" class="forgot-password">Forgot Password?</a>
+                        <a href="forgot-password.php" class="forgot-password">Forgot Password?</a>
                     </div>
                     <div class="input-wrapper">
                         <i class="fa-solid fa-lock input-icon"></i>

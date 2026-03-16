@@ -162,7 +162,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
 
                 <!-- Google Sign-In Button -->
-                <button type="button" class="btn btn-outline w-full"
+                <button type="button" id="google-signup-btn" class="btn btn-outline w-full"
                     style="margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border-color: #e5e7eb; color: #111827;">
                     <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="20">
                     Continue with Google
@@ -190,7 +190,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
 
             <div style="text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: var(--text-muted);">
-                Already have an account? <a href="index.html" style="color: #2563eb; font-weight: 600;">Log in</a>
+                Already have an account? <a href="index.php" style="color: #2563eb; font-weight: 600;">Log in</a>
             </div>
 
             <div style="text-align: center; margin-top: 2rem; font-size: 0.75rem; color: #9ca3af;">
@@ -199,7 +199,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { signInWithGoogle } from './js/firebase-auth.js';
+
         // Password toggles
         document.getElementById('toggle-pw1').addEventListener('click', function () {
             const input = document.getElementById('password');
@@ -228,6 +230,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 icon.classList.add('fa-eye');
             }
         });
+
+        // Google Authentication Logic via Firebase
+        window.handleGoogleSignIn = async function () {
+            const result = await signInWithGoogle();
+
+            if (result.success) {
+                const user = result.user;
+
+                fetch('google-auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: user.email,
+                        name: user.displayName,
+                        picture: user.photoURL
+                    })
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            if (data.role === 'admin') window.location.href = 'admin-dashboard.php';
+                            else if (data.role === 'shop_owner') window.location.href = 'shopowner-dashboard.php';
+                            else window.location.href = 'dashboard.php';
+                        } else {
+                            alert('Backend authentication failed: ' + data.message);
+                        }
+                    });
+            } else {
+                alert(result.error || 'Google Sign-In failed.');
+            }
+        };
+
+        document.getElementById('google-signup-btn').addEventListener('click', window.handleGoogleSignIn);
     </script>
 </body>
 

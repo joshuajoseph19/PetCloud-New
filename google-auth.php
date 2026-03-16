@@ -25,7 +25,7 @@ if ($data && isset($data['email'])) {
         // I will insert a dummy hash that can never be matched.
         $dummy_hash = '$2y$10$GOOGLEAUTHUSERRANDOMSTRING';
 
-        $sql = "INSERT INTO users (full_name, email, password, profile_pic, role) VALUES (?, ?, ?, ?, 'client')";
+        $sql = "INSERT INTO users (full_name, email, password_hash, profile_pic, role) VALUES (?, ?, ?, ?, 'client')";
         $pdo->prepare($sql)->execute([$name, $email, $dummy_hash, $picture]);
         $_SESSION['user_id'] = $pdo->lastInsertId();
         $_SESSION['role'] = 'client';
