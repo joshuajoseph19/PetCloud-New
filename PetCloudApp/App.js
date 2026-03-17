@@ -4,12 +4,41 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert,
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import * as ImagePicker from 'expo-image-picker';
+
 import { API_URL, API_BASE_URL, getImageUrl, fetchWithTimeout } from './config';
 
 export default function App() {
     const [screen, setScreen] = useState('login');
     const [user, setUser] = useState(null);
     const mainScrollRef = useRef(null);
+
+    // Profile State
+    const [profileData, setProfileData] = useState({ full_name: '', phone: '', location: '', bio: '', profile_image: null });
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [profileSaving, setProfileSaving] = useState(false);
+
+    // Adoption Form State
+    const [isAdoptionFormVisible, setIsAdoptionFormVisible] = useState(false);
+    const [adoptionFormData, setAdoptionFormData] = useState({ phone: '', reason: '', living_situation: '', other_pets: false });
+    const [adoptionSubmitting, setAdoptionSubmitting] = useState(false);
+
+    // Health Records State
+    const [healthRecords, setHealthRecords] = useState([]);
+    const [healthLoading, setHealthLoading] = useState(false);
+    const [symptomChat, setSymptomChat] = useState([]);
+    const [symptomInput, setSymptomInput] = useState('');
+    const [symptomAnalyzing, setSymptomAnalyzing] = useState(false);
+
+    // Adoption Applications State
+    const [adoptionApplications, setAdoptionApplications] = useState([]);
+    const [adoptionStatusLoading, setAdoptionStatusLoading] = useState(false);
+    const [adoptionView, setAdoptionView] = useState('listings'); // 'listings' or 'my_applications'
+
+    // Add Health Record State
+    const [isAddHealthModalVisible, setIsAddHealthModalVisible] = useState(false);
+    const [newHealthData, setNewHealthData] = useState({ pet_id: '', record_type: 'Vaccination', date: new Date().toISOString().split('T')[0], title: '', description: '' });
+    const [healthSaving, setHealthSaving] = useState(false);
 
     // Dashboard Data
     const [dashboardData, setDashboardData] = useState(null);
@@ -664,6 +693,120 @@ export default function App() {
         }
     };
 
+    const fetchProfile = async () => {
+        if (!user) return;
+        setProfileLoading(true);
+        try {
+            const response = await fetchWithTimeout(`${API_URL}/get_profile.php?user_id=${user.id}`);
+            const data = await response.json();
+            if (data.success) {
+                setProfileData({
+                    full_name: data.data.full_name || '',
+                    phone: data.data.phone || '',
+                    location: data.data.location || '',
+                    bio: data.data.bio || '',
+                    profile_image: data.data.profile_image || null
+                });
+            }
+        } catch (error) {
+            console.error("Profile Fetch Error:", error);
+        } finally {
+            setProfileLoading(false);
+        }
+    };
+
+    const handlePickImage = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to make this work!');
+            return;
+        }
+
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.5,
+            base64: true,
+        });
+
+        if (!result.canceled) {
+            setProfileData({ ...profileData, profile_image: `data:image/jpeg;base64,${result.assets[0].base64}` });
+        }
+    };
+
+    const handleUpdateProfile = async () => {
+        if (!user) return;
+        if (!profileData.full_name) {
+            Alert.alert("Error", "Full Name is required.");
+            return;
+        }
+        setProfileSaving(true);
+        try {
+            const response = await fetchWithTimeout(`${API_URL}/update_profile.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...profileData, user_id: user.id })
+            });
+            const data = await response.json();
+            if (data.success) {
+                Alert.alert("Success", "Profile updated successfully!");
+                const updatedUser = { ...user, full_name: profileData.full_name };
+                setUser(updatedUser);
+            } else {
+                Alert.alert("Error", data.error || "Failed to update profile.");
+            }
+        } catch (error) {
+            console.error("Profile Update Error:", error);
+            Alert.alert("Error", "Could not connect to the server.");
+        } finally {
+            setProfileSaving(false);
+        }
+    };
+
+    const handleApplyAdoption = async () => {
+        if (!user || !selectedPet) return;
+        if (!adoptionFormData.phone || !adoptionFormData.reason || !adoptionFormData.living_situation) {
+            Alert.alert("Error", "Please fill in all required fields.");
+            return;
+        }
+
+        setAdoptionSubmitting(true);
+        try {
+            const payload = {
+                user_id: user.id,
+                listing_id: selectedPet.listing_id || null,
+                pet_name: selectedPet.pet_name,
+                pet_category: selectedPet.pet_type,
+                full_name: profileData.full_name || user.full_name || user.email,
+                email: user.email,
+                phone: adoptionFormData.phone,
+                reason: adoptionFormData.reason,
+                living_situation: adoptionFormData.living_situation,
+                other_pets: adoptionFormData.other_pets ? 1 : 0
+            };
+
+            const response = await fetchWithTimeout(`${API_URL}/apply_adoption.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (data.success) {
+                Alert.alert("Success", "Your adoption application has been submitted! We will contact you soon.");
+                setIsAdoptionFormVisible(false);
+                setAdoptionFormData({ phone: '', reason: '', living_situation: '', other_pets: false });
+            } else {
+                Alert.alert("Error", data.error || "Failed to submit application.");
+            }
+        } catch (error) {
+            console.error("Adoption Submit Error:", error);
+            Alert.alert("Error", "Could not connect to the server.");
+        } finally {
+            setAdoptionSubmitting(false);
+        }
+    };
+
     const handleDeleteRehomingListing = async (listingId) => {
         try {
             const response = await fetchWithTimeout(`${API_URL}/delete_rehoming_listing.php`, {
@@ -709,8 +852,112 @@ export default function App() {
         } else if (activeItem === 'Smart Feeder') {
             fetchFeederData();
             if (userPets.length === 0) fetchUserPets();
+        } else if (activeItem === 'Profile') {
+            fetchProfile();
+        } else if (activeItem === 'Health') {
+            fetchHealthRecords();
+        } else if (activeItem === 'Adoption' && adoptionView === 'my_applications') {
+            fetchAdoptionStatus();
         }
-    }, [activeItem, selectedCategory, user]);
+    }, [activeItem, adoptionView, selectedCategory, user]);
+
+    const fetchAdoptionStatus = async () => {
+        if (!user) return;
+        setAdoptionStatusLoading(true);
+        try {
+            const response = await fetchWithTimeout(`${API_URL}/get_adoption_status.php?user_id=${user.id}`);
+            const data = await response.json();
+            if (data.success) {
+                setAdoptionApplications(data.applications);
+            }
+        } catch (error) {
+            console.error("Adoption Status Fetch Error", error);
+        } finally {
+            setAdoptionStatusLoading(false);
+        }
+    };
+
+    const handleSymptomCheck = async () => {
+        if (!symptomInput.trim()) return;
+        
+        const newChat = [...symptomChat, { type: 'user', text: symptomInput }];
+        setSymptomChat(newChat);
+        setSymptomAnalyzing(true);
+        
+        const currentInput = symptomInput;
+        setSymptomInput('');
+
+        try {
+            const response = await fetchWithTimeout(`${API_URL}/symptom_checker.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symptom: currentInput })
+            });
+            const data = await response.json();
+            if (data.success) {
+                setSymptomChat([...newChat, { type: 'bot', text: data.response }]);
+            } else {
+                setSymptomChat([...newChat, { type: 'bot', text: data.error || "Sorry, I couldn't analyze that symptom right now." }]);
+            }
+        } catch (error) {
+            console.error("Symptom API Error", error);
+            setSymptomChat([...newChat, { type: 'bot', text: "Error connecting to AI service." }]);
+        } finally {
+            setSymptomAnalyzing(false);
+        }
+    };
+
+    const fetchHealthRecords = async () => {
+        if (!user) return;
+        setHealthLoading(true);
+        try {
+            const response = await fetchWithTimeout(`${API_URL}/get_health_records.php?user_id=${user.id}`);
+            const data = await response.json();
+            if (data.success && data.data) {
+                // The API returns pet-grouped records. Let's flatten for easy list display or adjust UI
+                const allRecords = [];
+                data.data.forEach(petGroup => {
+                    petGroup.records.forEach(rec => {
+                        allRecords.push({ ...rec, pet_name: petGroup.pet_name });
+                    });
+                });
+                setHealthRecords(allRecords);
+            }
+        } catch (error) {
+            console.error("Health Records Fetch Error", error);
+        } finally {
+            setHealthLoading(false);
+        }
+    };
+
+    const handleAddHealthRecord = async () => {
+        if (!user || !newHealthData.pet_id || !newHealthData.title) {
+            Alert.alert("Error", "Please select a pet and enter a title.");
+            return;
+        }
+        setHealthSaving(true);
+        try {
+            const response = await fetchWithTimeout(`${API_URL}/add_health_record.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...newHealthData, user_id: user.id })
+            });
+            const data = await response.json();
+            if (data.success) {
+                Alert.alert("Success", "Health record added successfully!");
+                setIsAddHealthModalVisible(false);
+                setNewHealthData({ pet_id: '', record_type: 'Vaccination', date: new Date().toISOString().split('T')[0], title: '', description: '' });
+                fetchHealthRecords();
+            } else {
+                Alert.alert("Error", data.error || "Failed to add record.");
+            }
+        } catch (error) {
+            console.error("Add Health Record Error:", error);
+            Alert.alert("Error", "Could not connect to the server.");
+        } finally {
+            setHealthSaving(false);
+        }
+    };
 
     useEffect(() => {
         if (checkoutStep === 2 && isCheckoutVisible) {
@@ -1353,9 +1600,11 @@ export default function App() {
                     </View>
                     <ScrollView style={styles.sidebarContent}>
                         {renderSidebarItem('Overview', 'grid-outline')}
+                        {renderSidebarItem('Profile', 'person-outline')}
                         {renderSidebarItem('Adoption', 'heart-outline')}
                         {renderSidebarItem('Pet Rehoming', 'paw-outline')}
                         {renderSidebarItem('My Pets', 'people-outline')}
+                        {renderSidebarItem('Health', 'medkit-outline')}
                         {renderSidebarItem('Smart Feeder', 'hardware-chip-outline')}
                         {renderSidebarItem('Schedule', 'calendar-outline')}
                         {renderSidebarItem('Marketplace', 'cart-outline')}
@@ -1374,6 +1623,7 @@ export default function App() {
     );
 
     // Dashboard Screen with "Website Design"
+
     return (
         <View style={styles.dashboardContainer}>
             {renderSidebar()}
@@ -1399,77 +1649,191 @@ export default function App() {
                 contentContainerStyle={styles.content}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
-                {activeItem === 'Adoption' ? (
+                {activeItem === 'Profile' ? (
+                    <View style={{ marginTop: 20, paddingHorizontal: 15 }}>
+                        <Text style={styles.pageTitle}>Edit Profile</Text>
+                        {profileLoading ? (
+                            <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+                        ) : (
+                            <View style={styles.minimalCard}>
+                                <View style={{ alignItems: 'center', marginBottom: 20 }}>
+                                    <View style={{ position: 'relative' }}>
+                                        <Image 
+                                            source={{ uri: profileData.profile_image || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.full_name || 'User')}&background=3b82f6&color=fff&size=200` }} 
+                                            style={{ width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: '#3b82f6' }} 
+                                        />
+                                        <TouchableOpacity 
+                                            style={{ position: 'absolute', bottom: 0, right: 0, backgroundColor: '#3b82f6', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'white' }}
+                                            onPress={handlePickImage}
+                                        >
+                                            <Ionicons name="camera" size={18} color="white" />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                                
+                                <Text style={styles.formLabel}>Full Name</Text>
+                                <TextInput
+                                    style={styles.formInput}
+                                    value={profileData.full_name}
+                                    onChangeText={(text) => setProfileData({ ...profileData, full_name: text })}
+                                    placeholder="Enter full name"
+                                />
+
+                                <Text style={styles.formLabel}>Phone Number</Text>
+                                <TextInput
+                                    style={styles.formInput}
+                                    value={profileData.phone}
+                                    onChangeText={(text) => setProfileData({ ...profileData, phone: text })}
+                                    placeholder="Enter phone number"
+                                    keyboardType="phone-pad"
+                                />
+
+                                <Text style={styles.formLabel}>Location</Text>
+                                <TextInput
+                                    style={styles.formInput}
+                                    value={profileData.location}
+                                    onChangeText={(text) => setProfileData({ ...profileData, location: text })}
+                                    placeholder="City, State"
+                                />
+
+                                <Text style={styles.formLabel}>Bio</Text>
+                                <TextInput
+                                    style={[styles.formInput, { height: 80, textAlignVertical: 'top' }]}
+                                    value={profileData.bio}
+                                    onChangeText={(text) => setProfileData({ ...profileData, bio: text })}
+                                    placeholder="Tell us about yourself..."
+                                    multiline
+                                />
+
+                                <TouchableOpacity 
+                                    style={[styles.payBtn, profileSaving && { opacity: 0.7 }, { marginTop: 10 }]} 
+                                    onPress={handleUpdateProfile}
+                                    disabled={profileSaving}
+                                >
+                                    {profileSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.payBtnText}>Save Changes</Text>}
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+                ) : activeItem === 'Adoption' ? (
                     <View style={{ marginTop: 20 }}>
                         <Text style={styles.pageTitle}>Find Your New Best Friend</Text>
 
-                        {/* Search Bar - Mimics web top search */}
-                        <View style={styles.adoptionSearchContainer}>
-                            <Ionicons name="search" size={20} color="#94a3b8" />
-                            <TextInput
-                                style={styles.adoptionSearchInput}
-                                placeholder="Search for pets to adopt..."
-                                placeholderTextColor="#94a3b8"
-                            />
+                        <View style={{ flexDirection: 'row', gap: 10, marginHorizontal: 15, marginBottom: 15 }}>
+                            <TouchableOpacity 
+                                style={{ flex: 1, backgroundColor: adoptionView === 'listings' ? '#3b82f6' : '#f1f5f9', paddingVertical: 12, borderRadius: 12, alignItems: 'center' }}
+                                onPress={() => setAdoptionView('listings')}
+                            >
+                                <Text style={{ color: adoptionView === 'listings' ? 'white' : '#64748b', fontWeight: 'bold' }}>Browse Pets</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={{ flex: 1, backgroundColor: adoptionView === 'my_applications' ? '#3b82f6' : '#f1f5f9', paddingVertical: 12, borderRadius: 12, alignItems: 'center' }}
+                                onPress={() => { setAdoptionView('my_applications'); fetchAdoptionStatus(); }}
+                            >
+                                <Text style={{ color: adoptionView === 'my_applications' ? 'white' : '#64748b', fontWeight: 'bold' }}>My Applications</Text>
+                            </TouchableOpacity>
                         </View>
 
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-                            {categories.map((cat) => (
-                                <TouchableOpacity
-                                    key={cat.name}
-                                    style={[styles.filterTab, selectedCategory === cat.name && styles.filterTabActive]}
-                                    onPress={() => setSelectedCategory(cat.name)}
-                                >
-                                    <Text style={[styles.filterText, selectedCategory === cat.name && styles.filterTextActive]}>{cat.name}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
+                        {adoptionView === 'listings' ? (
+                            <>
+                                {/* Search Bar - Mimics web top search */}
+                                <View style={styles.adoptionSearchContainer}>
+                                    <Ionicons name="search" size={20} color="#94a3b8" />
+                                    <TextInput
+                                        style={styles.adoptionSearchInput}
+                                        placeholder="Search for pets to adopt..."
+                                        placeholderTextColor="#94a3b8"
+                                    />
+                                </View>
 
-                        {adoptionLoading ? (
-                            <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
-                        ) : (
-                            <View style={styles.listingsGrid}>
-                                {adoptionListings.map((pet) => (
-                                    <View key={pet.id} style={styles.adoptionCard}>
-                                        <Image source={{ uri: getImageUrl(pet.image) }} style={styles.adoptionImage} />
-                                        <View style={styles.adoptionInfo}>
-                                            <View style={styles.adoptionHeaderRow}>
-                                                <Text style={styles.adoptionName}>{pet.pet_name}</Text>
-                                                <View style={styles.typeTag}>
-                                                    <Text style={styles.typeTagText}>{(pet.pet_type?.name || 'Pet').toUpperCase()}</Text>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+                                    {categories.map((cat) => (
+                                        <TouchableOpacity
+                                            key={cat.name}
+                                            style={[styles.filterTab, selectedCategory === cat.name && styles.filterTabActive]}
+                                            onPress={() => setSelectedCategory(cat.name)}
+                                        >
+                                            <Text style={[styles.filterText, selectedCategory === cat.name && styles.filterTextActive]}>{cat.name}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+
+                                {adoptionLoading ? (
+                                    <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+                                ) : (
+                                    <View style={styles.listingsGrid}>
+                                        {adoptionListings.map((pet) => (
+                                            <View key={pet.id} style={styles.adoptionCard}>
+                                                <Image source={{ uri: getImageUrl(pet.image) }} style={styles.adoptionImage} />
+                                                <View style={styles.adoptionInfo}>
+                                                    <View style={styles.adoptionHeaderRow}>
+                                                        <Text style={styles.adoptionName}>{pet.pet_name}</Text>
+                                                        <View style={styles.typeTag}>
+                                                            <Text style={styles.typeTagText}>{(pet.pet_type?.name || 'Pet').toUpperCase()}</Text>
+                                                        </View>
+                                                    </View>
+                                                    <Text style={styles.adoptionDetails}>
+                                                        {pet.age?.years || 0} yrs • {pet.breed?.name || 'Unknown'}
+                                                    </Text>
+                                                    <TouchableOpacity
+                                                        style={styles.viewProfileBtn}
+                                                        onPress={() => {
+                                                            const mappedPet = {
+                                                                ...pet,
+                                                                pet_name: pet.pet_name,
+                                                                pet_image: pet.image,
+                                                                pet_type: pet.pet_type?.name,
+                                                                pet_breed: pet.breed?.name,
+                                                                pet_age: (pet.age?.years || 0) + " yrs",
+                                                                pet_description: pet.description || "No description available.",
+                                                                pet_weight: pet.weight_kg ? pet.weight_kg + " kg" : "N/A",
+                                                                pet_gender: pet.gender || "Unknown",
+                                                                is_adoption: true,
+                                                                listing_id: pet.id
+                                                            };
+                                                            setSelectedPet(mappedPet);
+                                                            setIsPetModalVisible(true);
+                                                        }}
+                                                    >
+                                                        <Text style={styles.viewProfileText}>View Profile</Text>
+                                                    </TouchableOpacity>
                                                 </View>
                                             </View>
-                                            <Text style={styles.adoptionDetails}>
-                                                {pet.age?.years || 0} yrs • {pet.breed?.name || 'Unknown'}
-                                            </Text>
-                                            <TouchableOpacity
-                                                style={styles.viewProfileBtn}
-                                                onPress={() => {
-                                                    const mappedPet = {
-                                                        ...pet,
-                                                        pet_name: pet.pet_name,
-                                                        pet_image: pet.image,
-                                                        pet_type: pet.pet_type?.name,
-                                                        pet_breed: pet.breed?.name,
-                                                        pet_age: (pet.age?.years || 0) + " yrs",
-                                                        pet_description: pet.description || "No description available.",
-                                                        pet_weight: pet.weight_kg ? pet.weight_kg + " kg" : "N/A",
-                                                        pet_gender: pet.gender || "Unknown"
-                                                    };
-                                                    setSelectedPet(mappedPet);
-                                                    setIsPetModalVisible(true);
-                                                }}
-                                            >
-                                                <Text style={styles.viewProfileText}>View Profile</Text>
-                                            </TouchableOpacity>
+                                        ))}
+                                        {adoptionListings.length === 0 && (
+                                            <View style={styles.emptyStateContainer}>
+                                                <Ionicons name="search-outline" size={60} color="#e2e8f0" />
+                                                <Text style={styles.emptyStateText}>No pets found matching this category.</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                )}
+                            </>
+                        ) : (
+                            <View style={{ paddingHorizontal: 15 }}>
+                                {adoptionStatusLoading ? (
+                                    <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+                                ) : adoptionApplications.length === 0 ? (
+                                    <View style={{ alignItems: 'center', padding: 40 }}>
+                                        <Ionicons name="document-text-outline" size={60} color="#cbd5e1" />
+                                        <Text style={{ color: '#64748b', marginTop: 10 }}>No applications submitted yet.</Text>
+                                    </View>
+                                ) : (
+                                    adoptionApplications.map((app) => (
+                                        <View key={app.id} style={{ backgroundColor: 'white', borderRadius: 16, padding: 15, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 1 }}>
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <View>
+                                                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1e293b' }}>{app.pet_name}</Text>
+                                                    <Text style={{ fontSize: 13, color: '#64748b' }}>{app.pet_category} • Applied on {new Date(app.created_at).toLocaleDateString()}</Text>
+                                                </View>
+                                                <View style={{ backgroundColor: app.status === 'Approved' ? '#dcfce7' : app.status === 'Rejected' ? '#fee2e2' : '#fef9c3', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
+                                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: app.status === 'Approved' ? '#166534' : app.status === 'Rejected' ? '#991b1b' : '#854d0e' }}>
+                                                        {app.status ? app.status.toUpperCase() : 'PENDING'}
+                                                    </Text>
+                                                </View>
+                                            </View>
                                         </View>
-                                    </View>
-                                ))}
-                                {adoptionListings.length === 0 && (
-                                    <View style={styles.emptyStateContainer}>
-                                        <Ionicons name="search-outline" size={60} color="#e2e8f0" />
-                                        <Text style={styles.emptyStateText}>No pets found matching this category.</Text>
-                                    </View>
+                                    ))
                                 )}
                             </View>
                         )}
@@ -1567,6 +1931,96 @@ export default function App() {
                                 </TouchableOpacity>
                             </View>
                         )}
+                    </View>
+                ) : activeItem === 'Health' ? (
+                    <View style={{ marginTop: 20 }}>
+                        <Text style={styles.pageTitle}>Pet Health & Wellness</Text>
+
+                        {/* AI Symptom Checker Section */}
+                        <View style={{ backgroundColor: 'white', borderRadius: 20, padding: 20, marginBottom: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, gap: 10 }}>
+                                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Ionicons name="medical" size={20} color="#3b82f6" />
+                                </View>
+                                <View>
+                                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1e293b' }}>AI Symptom Checker</Text>
+                                    <Text style={{ fontSize: 12, color: '#3b82f6', fontWeight: 'bold' }}>POWERED BY PETCLOUD AI</Text>
+                                </View>
+                            </View>
+                            
+                            <View style={{ backgroundColor: '#f8fafc', borderRadius: 15, padding: 15, height: 200, marginBottom: 15 }}>
+                                <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }} showsVerticalScrollIndicator={false}>
+                                    {symptomChat.length === 0 ? (
+                                        <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, opacity: 0.5 }}>
+                                            <Ionicons name="chatbubbles-outline" size={40} color="#94a3b8" />
+                                            <Text style={{ marginTop: 10, color: '#64748b', textAlign: 'center' }}>Describe your pet's symptoms (e.g., "My dog is coughing")</Text>
+                                        </View>
+                                    ) : (
+                                        symptomChat.map((msg, idx) => (
+                                            <View key={idx} style={{ alignSelf: msg.type === 'user' ? 'flex-end' : 'flex-start', backgroundColor: msg.type === 'user' ? '#3b82f6' : '#e0e7ff', padding: 10, borderRadius: 15, borderBottomRightRadius: msg.type === 'user' ? 0 : 15, borderBottomLeftRadius: msg.type === 'bot' ? 0 : 15, maxWidth: '85%', marginBottom: 10 }}>
+                                                <Text style={{ color: msg.type === 'user' ? 'white' : '#1e3a8a', fontSize: 13, lineHeight: 18 }}>{msg.text}</Text>
+                                            </View>
+                                        ))
+                                    )}
+                                    {symptomAnalyzing && (
+                                        <View style={{ alignSelf: 'flex-start', backgroundColor: '#e0e7ff', padding: 10, borderRadius: 15, borderBottomLeftRadius: 0, marginBottom: 10 }}>
+                                            <ActivityIndicator size="small" color="#3b82f6" />
+                                        </View>
+                                    )}
+                                </ScrollView>
+                            </View>
+
+                            <View style={{ flexDirection: 'row', gap: 10 }}>
+                                <TextInput 
+                                    style={{ flex: 1, backgroundColor: '#f1f5f9', borderRadius: 12, paddingHorizontal: 15, height: 45, fontSize: 14 }}
+                                    placeholder="Enter symptoms..."
+                                    value={symptomInput}
+                                    onChangeText={setSymptomInput}
+                                    onSubmitEditing={handleSymptomCheck}
+                                />
+                                <TouchableOpacity 
+                                    style={{ width: 45, height: 45, backgroundColor: '#3b82f6', borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
+                                    onPress={handleSymptomCheck}
+                                    disabled={symptomAnalyzing || !symptomInput.trim()}
+                                >
+                                    <Ionicons name="send" size={20} color="white" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        {/* Health Records Section */}
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1e293b' }}>Health Records</Text>
+                            <TouchableOpacity style={{ backgroundColor: '#f1f5f9', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
+                                <Text style={{ fontSize: 12, color: '#3b82f6', fontWeight: 'bold' }}>+ New Record</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {healthLoading ? (
+                            <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 20 }} />
+                        ) : healthRecords.length === 0 ? (
+                            <View style={{ alignItems: 'center', padding: 30, backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#f1f5f9' }}>
+                                <Ionicons name="document-text-outline" size={50} color="#cbd5e1" style={{ marginBottom: 10 }} />
+                                <Text style={{ color: '#64748b', fontSize: 14 }}>No health records found.</Text>
+                            </View>
+                        ) : (
+                            healthRecords.map((record) => (
+                                <View key={record.id} style={{ backgroundColor: 'white', borderRadius: 16, padding: 15, marginBottom: 15, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 1 }}>
+                                    <View style={{ width: 45, height: 45, borderRadius: 12, backgroundColor: '#fef3c7', alignItems: 'center', justifyContent: 'center', marginRight: 15 }}>
+                                        <Ionicons name={record.record_type === 'Vaccination' ? 'medical' : record.record_type === 'Surgery' ? 'cut' : 'document-text'} size={24} color="#d97706" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#1e293b' }}>{record.title}</Text>
+                                        <Text style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>{record.pet_name} • {record.record_type}</Text>
+                                    </View>
+                                    <View style={{ alignItems: 'flex-end' }}>
+                                        <Text style={{ fontSize: 12, color: '#94a3b8', fontWeight: 'bold' }}>{new Date(record.date).toLocaleDateString()}</Text>
+                                    </View>
+                                </View>
+                            ))
+                        )}
+                        
+                        <View style={{ height: 40 }} />
                     </View>
                 ) : activeItem === 'Smart Feeder' ? (
                     <View style={{ marginTop: 20 }}>
@@ -2360,9 +2814,9 @@ export default function App() {
                 )
                 }
                 <View style={{ height: 40 }} />
-            </ScrollView >
+            </ScrollView>
             {/* Pet Profile Modal */}
-            < Modal
+            <Modal
                 animationType="slide"
                 transparent={true}
                 visible={isPetModalVisible}
@@ -2403,17 +2857,105 @@ export default function App() {
                                     </View>
 
                                     <View style={styles.modalActionGrid}>
-                                        <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: '#3b82f6', width: '100%' }]}
-                                            onPress={() => { setIsPetModalVisible(false); setActiveItem('Overview'); }}>
-                                            <Text style={styles.modalActionTextWhite}>Schedule Vet</Text>
-                                        </TouchableOpacity>
+                                        {selectedPet.is_adoption ? (
+                                            <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: '#10b981', width: '100%' }]}
+                                                onPress={() => { setIsPetModalVisible(false); setIsAdoptionFormVisible(true); }}>
+                                                <Text style={styles.modalActionTextWhite}>Apply for Adoption</Text>
+                                            </TouchableOpacity>
+                                        ) : (
+                                            <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: '#3b82f6', width: '100%' }]}
+                                                onPress={() => { setIsPetModalVisible(false); setActiveItem('Schedule'); }}>
+                                                <Text style={styles.modalActionTextWhite}>Schedule Vet</Text>
+                                            </TouchableOpacity>
+                                        )}
                                     </View>
                                 </View>
                             </ScrollView>
                         )}
                     </View>
                 </View>
-            </Modal >
+            </Modal>
+
+            {/* Add Health Record Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={isAddHealthModalVisible}
+                onRequestClose={() => setIsAddHealthModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.dashboardModalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>New Health Record</Text>
+                            <TouchableOpacity onPress={() => setIsAddHealthModalVisible(false)}>
+                                <Ionicons name="close" size={24} color="#64748b" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView style={{ padding: 20 }}>
+                            <Text style={styles.formLabel}>Select Pet</Text>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 15 }}>
+                                {userPets.map(p => (
+                                    <TouchableOpacity 
+                                        key={p.id}
+                                        style={[{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0' }, newHealthData.pet_id === p.id && { backgroundColor: '#3b82f6', borderColor: '#3b82f6' }]}
+                                        onPress={() => setNewHealthData({...newHealthData, pet_id: p.id})}
+                                    >
+                                        <Text style={[{ color: '#64748b', fontSize: 13 }, newHealthData.pet_id === p.id && { color: 'white', fontWeight: 'bold' }]}>{p.pet_name}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <Text style={styles.formLabel}>Record Type</Text>
+                            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 15 }}>
+                                {['Vaccination', 'Checkup', 'Surgery', 'Deworming'].map(type => (
+                                    <TouchableOpacity 
+                                        key={type}
+                                        style={[{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center' }, newHealthData.record_type === type && { backgroundColor: '#eff6ff', borderColor: '#3b82f6' }]}
+                                        onPress={() => setNewHealthData({...newHealthData, record_type: type})}
+                                    >
+                                        <Text style={[{ color: '#64748b', fontSize: 11 }, newHealthData.record_type === type && { color: '#3b82f6', fontWeight: 'bold' }]}>{type}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <Text style={styles.formLabel}>Title</Text>
+                            <TextInput
+                                style={styles.formInput}
+                                value={newHealthData.title}
+                                onChangeText={(val) => setNewHealthData({...newHealthData, title: val})}
+                                placeholder="e.g. Annual Rabies Vaccination"
+                            />
+
+                            <Text style={styles.formLabel}>Date</Text>
+                            <TextInput
+                                style={styles.formInput}
+                                value={newHealthData.date}
+                                onChangeText={(val) => setNewHealthData({...newHealthData, date: val})}
+                                placeholder="YYYY-MM-DD"
+                            />
+
+                            <Text style={styles.formLabel}>Description / Notes</Text>
+                            <TextInput
+                                style={[styles.formInput, { height: 80, textAlignVertical: 'top' }]}
+                                value={newHealthData.description}
+                                onChangeText={(val) => setNewHealthData({...newHealthData, description: val})}
+                                placeholder="Any additional notes..."
+                                multiline
+                            />
+
+                            <TouchableOpacity 
+                                style={[styles.payBtn, healthSaving && { opacity: 0.7 }]}
+                                onPress={handleAddHealthRecord}
+                                disabled={healthSaving}
+                            >
+                                {healthSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.payBtnText}>Save Record</Text>}
+                            </TouchableOpacity>
+                            <View style={{ height: 40 }} />
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
 
             {renderCartModal()}
             {renderCheckoutModal()}
@@ -2519,6 +3061,70 @@ export default function App() {
                     </View>
                 </View>
             </Modal>
+
+            {/* Adoption Application Modal */}
+            <Modal animationType="slide" transparent={true} visible={isAdoptionFormVisible} onRequestClose={() => setIsAdoptionFormVisible(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Apply for Adoption</Text>
+                            <TouchableOpacity onPress={() => setIsAdoptionFormVisible(false)}><Ionicons name="close" size={24} color="#64748b" /></TouchableOpacity>
+                        </View>
+                        <ScrollView style={{ maxHeight: 500 }}>
+                            <Text style={{ fontSize: 13, color: '#64748b', marginBottom: 15 }}>Applying for: <Text style={{ fontWeight: 'bold', color: '#10b981' }}>{selectedPet?.pet_name}</Text></Text>
+                            <Text style={styles.formLabel}>Phone Number *</Text>
+                            <TextInput 
+                                style={styles.formInput} 
+                                placeholder="Phone Number" 
+                                keyboardType="phone-pad"
+                                value={adoptionFormData.phone} 
+                                onChangeText={(text) => setAdoptionFormData({ ...adoptionFormData, phone: text })} 
+                            />
+                            
+                            <Text style={styles.formLabel}>Living Situation *</Text>
+                            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 15 }}>
+                                {['House', 'Apartment', 'Studio'].map(l => (
+                                    <TouchableOpacity 
+                                        key={l} 
+                                        style={[{ paddingVertical: 10, paddingHorizontal: 15, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0', backgroundColor: '#f8fafc' }, adoptionFormData.living_situation === l && { borderColor: '#10b981', backgroundColor: '#ecfdf5' }]} 
+                                        onPress={() => setAdoptionFormData({ ...adoptionFormData, living_situation: l })}
+                                    >
+                                        <Text style={[{ fontSize: 12, color: '#64748b', fontWeight: 'bold' }, adoptionFormData.living_situation === l && { color: '#10b981' }]}>{l}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, gap: 10 }}>
+                                <TouchableOpacity 
+                                    style={{ width: 24, height: 24, borderRadius: 6, borderWidth: 1, borderColor: '#10b981', backgroundColor: adoptionFormData.other_pets ? '#10b981' : 'transparent', alignItems: 'center', justifyContent: 'center' }}
+                                    onPress={() => setAdoptionFormData({ ...adoptionFormData, other_pets: !adoptionFormData.other_pets })}
+                                >
+                                    {adoptionFormData.other_pets && <Ionicons name="checkmark" size={16} color="white" />}
+                                </TouchableOpacity>
+                                <Text style={{ fontSize: 13, color: '#1e293b', fontWeight: 'bold' }}>Do you have other pets?</Text>
+                            </View>
+
+                            <Text style={styles.formLabel}>Reason for Adoption *</Text>
+                            <TextInput 
+                                style={[styles.formInput, { height: 80, textAlignVertical: 'top' }]} 
+                                placeholder="Why do you want this pet?" 
+                                multiline
+                                value={adoptionFormData.reason} 
+                                onChangeText={(text) => setAdoptionFormData({ ...adoptionFormData, reason: text })} 
+                            />
+
+                            <TouchableOpacity
+                                style={[styles.button, { backgroundColor: '#10b981' }, adoptionSubmitting && { opacity: 0.7 }]}
+                                onPress={handleApplyAdoption}
+                                disabled={adoptionSubmitting}
+                            >
+                                {adoptionSubmitting ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Submit Application</Text>}
+                            </TouchableOpacity>
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
+
             {/* Add Pet Modal */}
             <Modal animationType="slide" transparent={true} visible={isAddPetModalVisible} onRequestClose={() => setIsAddPetModalVisible(false)}>
                 <View style={styles.modalOverlay}>
@@ -2554,7 +3160,7 @@ export default function App() {
                     </View>
                 </View>
             </Modal>
-        </View >
+        </View>
     );
 }
 
