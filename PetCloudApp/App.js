@@ -2750,185 +2750,148 @@ export default function App() {
                         )}
                     </View>
                 ) : activeItem === 'Schedule' ? (
-                    <View style={{ marginTop: 20 }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-                            <View>
-                                <Text style={[styles.pageTitle, { fontSize: 24, marginBottom: 4 }]}>
-                                    {scheduleStep === 1 ? 'Book Service' : scheduleStep === 2 ? 'Select Type' : 'Select Clinic'}
-                                </Text>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#3b82f6' }} />
-                                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#64748b' }}>
-                                        Step {scheduleStep} of 3
-                                    </Text>
-                                </View>
-                            </View>
-                            {scheduleStep > 1 && (
-                                <TouchableOpacity
-                                    style={{ padding: 10, backgroundColor: '#f1f5f9', borderRadius: 12 }}
-                                    onPress={() => setScheduleStep(scheduleStep - 1)}
-                                >
-                                    <Ionicons name="arrow-back" size={20} color="#1e293b" />
-                                </TouchableOpacity>
-                            )}
+                    <ScrollView style={{ marginTop: 20 }} showsVerticalScrollIndicator={false}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <Text style={[styles.pageTitle, { fontSize: 22, color: '#1e293b' }]}>My Schedule</Text>
+                            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}>
+                                <Ionicons name="add" size={16} color="#3b82f6" />
+                                <Text style={{ fontSize: 13, color: '#3b82f6', fontWeight: 'bold', marginLeft: 4 }}>New Appointment</Text>
+                            </TouchableOpacity>
                         </View>
 
-                        {scheduleLoading ? (
-                            <ActivityIndicator size="large" color="#3b82f6" style={{ marginVertical: 100 }} />
-                        ) : (
-                            <View>
-                                {scheduleStep === 1 && (
-                                    <View style={styles.categoryGridSchedule}>
-                                        {scheduleCategories.map((cat) => (
-                                            <TouchableOpacity
-                                                key={cat.id}
-                                                style={[styles.categoryCardSchedule, scheduleData.service_id === cat.id && styles.categoryCardScheduleActive]}
-                                                onPress={() => {
-                                                    setScheduleData({ ...scheduleData, service_id: cat.id });
-                                                    setEstimation(cat.price);
-                                                    fetchServicesByCategory(cat.id);
-                                                    setScheduleStep(2);
-                                                    mainScrollRef.current?.scrollTo({ y: 0, animated: true });
-                                                }}
-                                            >
-                                                <View style={[styles.categoryIconCircle, scheduleData.service_id === cat.id && styles.categoryIconCircleActive]}>
-                                                    <Ionicons name={cat.icon} size={24} color={scheduleData.service_id === cat.id ? '#3b82f6' : '#64748b'} />
-                                                </View>
-                                                <Text style={[styles.categoryTitleSchedule, scheduleData.service_id === cat.id && styles.categoryTitleScheduleActive]} numberOfLines={2}>
-                                                    {cat.title}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
+                        {/* Dummy Past Appointments */}
+                        <View style={{ gap: 15, marginBottom: 40 }}>
+                            <View style={{ backgroundColor: 'white', borderRadius: 12, borderWidth: 1, borderColor: '#f1f5f9', padding: 15, flexDirection: 'row', alignItems: 'center' }}>
+                                <View style={{ alignItems: 'center', paddingRight: 15, borderRightWidth: 1, borderRightColor: '#f1f5f9' }}>
+                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#1e293b' }}>11</Text>
+                                    <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748b' }}>MAR</Text>
+                                </View>
+                                <View style={{ flex: 1, paddingLeft: 15 }}>
+                                    <View style={[styles.statusBadgeSmall, { backgroundColor: '#f0fdf4', alignSelf: 'flex-start', marginBottom: 4 }]}>
+                                        <Text style={[styles.statusBadgeTextSmall, { color: '#166534', fontSize: 9 }]}>COMPLETED</Text>
                                     </View>
-                                )}
-
-                                {scheduleStep === 2 && (
-                                    <View>
-                                        <Text style={styles.formLabelSchedule}>
-                                            <Ionicons name="briefcase-outline" size={16} /> SELECT SERVICE
-                                        </Text>
-                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.serviceHorizontalScroll}>
-                                            {availableServices.length > 0 ? availableServices.map((svc) => (
-                                                <TouchableOpacity
-                                                    key={svc.id}
-                                                    style={[styles.serviceCardSmall, selectedSubService?.id === svc.id && styles.serviceCardSmallActive]}
-                                                    onPress={() => {
-                                                        setSelectedSubService(svc);
-                                                        fetchHospitalsByService(svc.name);
-                                                        setScheduleStep(3);
-                                                        mainScrollRef.current?.scrollTo({ y: 0, animated: true });
-                                                    }}
-                                                >
-                                                    <Text style={styles.serviceNameSmall}>{svc.name}</Text>
-                                                    <Text style={styles.serviceDurationSmall}>{svc.default_duration_minutes}m</Text>
-                                                </TouchableOpacity>
-                                            )) : (
-                                                <Text style={{ color: '#94a3b8', fontStyle: 'italic', padding: 20 }}>No sub-services found for this category.</Text>
-                                            )}
-                                        </ScrollView>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                        <Text style={{ fontSize: 13, color: '#64748b' }}><Ionicons name="time-outline" size={13} /> 10:30 AM</Text>
+                                        <Text style={{ fontSize: 13, color: '#64748b' }}><Ionicons name="location-outline" size={13} /> PetCloud Partner</Text>
                                     </View>
-                                )}
-
-                                {scheduleStep === 3 && (
-                                    <View>
-                                        <Text style={styles.formLabelSchedule}>
-                                            <Ionicons name="medkit-outline" size={16} /> SELECT CLINIC
-                                        </Text>
-                                        {availableHospitals.map((hosp) => (
-                                            <TouchableOpacity
-                                                key={hosp.id}
-                                                style={[styles.clinicCardWide, selectedHospital?.id === hosp.id && styles.clinicCardWideActive]}
-                                                onPress={() => {
-                                                    setSelectedHospital(hosp);
-                                                    fetchSlots(hosp.id, selectedDate);
-                                                }}
-                                            >
-                                                <View style={styles.clinicLogoCircle}>
-                                                    <Ionicons name="business" size={24} color="#3b82f6" />
-                                                </View>
-                                                <View style={styles.clinicInfoMain}>
-                                                    <Text style={styles.clinicNameLarge}>{hosp.name}</Text>
-                                                    <Text style={styles.clinicSubText}>{hosp.address}</Text>
-                                                </View>
-                                                <Text style={styles.clinicPriceTag}>₹{hosp.price || estimation}</Text>
-                                            </TouchableOpacity>
-                                        ))}
-
-                                        {selectedHospital && (
-                                            <View style={{ marginTop: 20 }}>
-                                                <View style={styles.clinicAlertBadge}>
-                                                    <Ionicons name="information-circle-outline" size={22} color="#1d4ed8" />
-                                                    <Text style={styles.clinicAlertText}>Selected Clinic: {selectedHospital.name}</Text>
-                                                </View>
-
-                                                <View style={{ flexDirection: 'row', gap: 15 }}>
-                                                    <View style={{ flex: 1 }}>
-                                                        <Text style={styles.formLabelSchedule}>
-                                                            <Ionicons name="calendar-outline" size={14} /> SELECT DATE
-                                                        </Text>
-                                                        <TouchableOpacity style={styles.datePickerStatic}>
-                                                            <Text style={{ fontSize: 13, color: '#1e293b' }}>{selectedDate}</Text>
-                                                            <Ionicons name="calendar" size={18} color="#94a3b8" />
-                                                        </TouchableOpacity>
-                                                    </View>
-                                                    <View style={{ flex: 1 }}>
-                                                        <Text style={styles.formLabelSchedule}>
-                                                            <Ionicons name="time-outline" size={14} /> AVAILABLE TIME
-                                                        </Text>
-                                                        {availableSlots.length > 0 ? (
-                                                            <View style={styles.slotGridWrap}>
-                                                                {availableSlots.slice(0, 3).map((slot, i) => (
-                                                                    <TouchableOpacity
-                                                                        key={i}
-                                                                        disabled={!slot.available}
-                                                                        style={[styles.slotBtn, { width: '100%' }, selectedTime === slot.time && styles.slotBtnActive, !slot.available && { opacity: 0.3 }]}
-                                                                        onPress={() => setSelectedTime(slot.time)}
-                                                                    >
-                                                                        <Text style={[styles.slotBtnText, selectedTime === slot.time && styles.slotBtnTextActive]}>{slot.display}</Text>
-                                                                    </TouchableOpacity>
-                                                                ))}
-                                                                {availableSlots.length > 3 && (
-                                                                    <TouchableOpacity style={{ width: '100%', alignItems: 'center' }}>
-                                                                        <Text style={{ color: '#3b82f6', fontSize: 11, fontWeight: '700' }}>View More Slots</Text>
-                                                                    </TouchableOpacity>
-                                                                )}
-                                                            </View>
-                                                        ) : (
-                                                            <View style={{ padding: 15, backgroundColor: '#f8fafc', borderRadius: 12 }}>
-                                                                <Text style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>Select a date to view slots</Text>
-                                                            </View>
-                                                        )}
-                                                    </View>
-                                                </View>
-                                            </View>
-                                        )}
-                                    </View>
-                                )}
-
-                                <View style={{ borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 20, marginTop: 10 }}>
-                                    <View style={styles.estimationRowFull}>
-                                        <Text style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>Total estimation</Text>
-                                        <Text style={{ fontSize: 28, fontWeight: '800', color: '#1e293b' }}>₹{selectedTime ? (selectedHospital?.price || estimation) : 0}</Text>
-                                    </View>
-
-                                    <TouchableOpacity
-                                        style={[styles.secureBookBtn, (!selectedTime) && { opacity: 0.6 }]}
-                                        onPress={() => {
-                                            if (!selectedTime) {
-                                                Alert.alert("Incomplete Booking", "Please select a time slot to proceed.");
-                                                return;
-                                            }
-                                            setPaymentModalVisible(true);
-                                        }}
-                                    >
-                                        <Ionicons name="lock-closed" size={20} color="white" />
-                                        <Text style={styles.secureBookBtnText}>Secure Payment & Book</Text>
-                                        <Ionicons name="chevron-forward" size={20} color="white" style={{ position: 'absolute', right: 20 }} />
-                                    </TouchableOpacity>
                                 </View>
                             </View>
-                        )}
-                    </View>
+
+                            <View style={{ backgroundColor: 'white', borderRadius: 12, borderWidth: 1, borderColor: '#f1f5f9', padding: 15, flexDirection: 'row', alignItems: 'center' }}>
+                                <View style={{ alignItems: 'center', paddingRight: 15, borderRightWidth: 1, borderRightColor: '#f1f5f9' }}>
+                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#1e293b' }}>15</Text>
+                                    <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748b' }}>MAR</Text>
+                                </View>
+                                <View style={{ flex: 1, paddingLeft: 15 }}>
+                                    <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#1e293b', marginBottom: 2 }}>General for Pet</Text>
+                                    <View style={[styles.statusBadgeSmall, { backgroundColor: '#f0fdf4', alignSelf: 'flex-start', marginBottom: 4 }]}>
+                                        <Text style={[styles.statusBadgeTextSmall, { color: '#166534', fontSize: 9 }]}>COMPLETED</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                        <Text style={{ fontSize: 13, color: '#64748b' }}><Ionicons name="time-outline" size={13} /> 10:00 AM</Text>
+                                        <Text style={{ fontSize: 13, color: '#64748b' }}><Ionicons name="location-outline" size={13} /> City Pet Clinic</Text>
+                                    </View>
+                                </View>
+                            </View>
+
+                            <View style={{ backgroundColor: 'white', borderRadius: 12, borderWidth: 1, borderColor: '#f1f5f9', padding: 15, flexDirection: 'row', alignItems: 'center' }}>
+                                <View style={{ alignItems: 'center', paddingRight: 15, borderRightWidth: 1, borderRightColor: '#f1f5f9' }}>
+                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#10b981' }}>18</Text>
+                                    <Text style={{ fontSize: 11, fontWeight: '600', color: '#10b981' }}>MAR</Text>
+                                </View>
+                                <View style={{ flex: 1, paddingLeft: 15 }}>
+                                    <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#1e293b', marginBottom: 4 }}>Emergency Consultation for enzo</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                        <Text style={{ fontSize: 13, color: '#64748b' }}><Ionicons name="time-outline" size={13} /> 9:00 AM</Text>
+                                        <Text style={{ fontSize: 13, color: '#64748b' }}><Ionicons name="location-outline" size={13} /> City Pet Clinic</Text>
+                                    </View>
+                                </View>
+                                <TouchableOpacity style={{ borderWidth: 1, borderColor: '#fee2e2', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}>
+                                    <Text style={{ color: '#ef4444', fontSize: 10, fontWeight: 'bold' }}>CANCEL</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        {/* Schedule New Appointment Form */}
+                        <View style={{ backgroundColor: 'white', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 40, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 25 }}>
+                                <View>
+                                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1e293b', marginBottom: 4 }}>Schedule New Appointment</Text>
+                                    <Text style={{ fontSize: 13, color: '#64748b' }}>Find the best care for your furry friend</Text>
+                                </View>
+                                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#10b981' }} />
+                                    <Text style={{ fontSize: 12, color: '#64748b', fontWeight: '500' }}>Step 1: Details</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#94a3b8', letterSpacing: 1, marginBottom: 15 }}><Ionicons name="paw" size={12} /> PET DETAILS</Text>
+                            
+                            <View style={{ flexDirection: 'row', gap: 15, marginBottom: 25 }}>
+                                <View style={{ flex: 2 }}>
+                                    <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>Pet Name</Text>
+                                    <TextInput 
+                                        style={{ borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, paddingHorizontal: 15, height: 45, backgroundColor: '#f8fafc', fontSize: 14 }}
+                                        placeholder="e.g. Bella"
+                                        placeholderTextColor="#cbd5e1"
+                                    />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>Breed</Text>
+                                    <View style={{ borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, paddingHorizontal: 15, height: 45, backgroundColor: '#f8fafc', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <Text style={{ fontSize: 14, color: '#1e293b' }}>Dog</Text>
+                                        <Ionicons name="chevron-down" size={16} color="#94a3b8" />
+                                    </View>
+                                </View>
+                            </View>
+
+                            <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#94a3b8', letterSpacing: 1, marginBottom: 15 }}><Ionicons name="grid" size={12} /> SELECT CATEGORY</Text>
+                            
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 30 }}>
+                                <View style={{ flexDirection: 'row', gap: 12 }}>
+                                    {scheduleCategories.map((cat) => (
+                                        <TouchableOpacity 
+                                            key={cat.id}
+                                            style={{ 
+                                                width: 100, 
+                                                height: 90, 
+                                                borderRadius: 12, 
+                                                borderWidth: 1, 
+                                                borderColor: scheduleData.service_id === cat.id ? '#3b82f6' : '#e2e8f0', 
+                                                backgroundColor: scheduleData.service_id === cat.id ? '#eff6ff' : 'white',
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                padding: 10
+                                            }}
+                                            onPress={() => {
+                                                setScheduleData({ ...scheduleData, service_id: cat.id });
+                                                setEstimation(cat.price);
+                                            }}
+                                        >
+                                            <Ionicons name={cat.icon} size={24} color={scheduleData.service_id === cat.id ? '#3b82f6' : '#64748b'} style={{ marginBottom: 8 }} />
+                                            <Text style={{ fontSize: 11, fontWeight: '600', color: scheduleData.service_id === cat.id ? '#1e293b' : '#64748b', textAlign: 'center' }} numberOfLines={2}>
+                                                {cat.title}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </ScrollView>
+
+                            <View style={{ borderTopWidth: 1, borderTopColor: '#f1f5f9', borderStyle: 'dashed', paddingTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <View>
+                                    <Text style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5 }}>Total estimation</Text>
+                                    <Text style={{ fontSize: 20, fontWeight: '800', color: '#1e293b' }}>₹{estimation}</Text>
+                                </View>
+                                <TouchableOpacity 
+                                    style={{ backgroundColor: '#0f172a', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                                    onPress={() => setPaymentModalVisible(true)}
+                                >
+                                    <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>Secure Payment & Book</Text>
+                                    <Ionicons name="lock-closed" size={14} color="white" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </ScrollView>
 
                 ) : (
                     <>
