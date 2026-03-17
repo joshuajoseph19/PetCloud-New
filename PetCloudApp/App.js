@@ -1096,7 +1096,7 @@ export default function App() {
         }
     };
 
-    if (screen === 'login') {
+    if (screen === 'login' || screen === 'signup') {
         return (
             <View style={styles.container}>
                 <View style={styles.authBox}>
