@@ -75,7 +75,16 @@ export default function App() {
     const [isCartVisible, setIsCartVisible] = useState(false);
     const [isCheckoutVisible, setIsCheckoutVisible] = useState(false);
     const [isAddPetModalVisible, setIsAddPetModalVisible] = useState(false);
-    const [newPetData, setNewPetData] = useState({ name: '', breed: '', gender: 'Male', age: '1 Year' });
+    const [newPetData, setNewPetData] = useState({ 
+        name: '', 
+        breed: '', 
+        gender: 'Male', 
+        age: '1 Year',
+        type: 'Dog',
+        weight: '',
+        description: '',
+        image: null 
+    });
     const [checkoutStep, setCheckoutStep] = useState(1); // 1: Shipping, 2: Payment, 3: Success
     const [paymentSubStep, setPaymentSubStep] = useState('Splash'); // Splash, Contact, Methods
     const [selectedMethod, setSelectedMethod] = useState('Cards'); // Cards, Netbanking, Wallet, PayLater
@@ -711,14 +720,27 @@ export default function App() {
                     pet_name: newPetData.name,
                     pet_breed: newPetData.breed,
                     pet_gender: newPetData.gender,
-                    pet_age: newPetData.age
+                    pet_age: newPetData.age,
+                    pet_type: newPetData.type,
+                    pet_weight: newPetData.weight,
+                    pet_description: newPetData.description,
+                    pet_image: newPetData.image || 'uploads/pets/default.png'
                 })
             });
             const data = await response.json();
             if (data.success) {
                 Alert.alert("Success", "New family member added! ❤️");
                 setIsAddPetModalVisible(false);
-                setNewPetData({ name: '', breed: '', gender: 'Male', age: '1 Year' });
+                setNewPetData({ 
+                    name: '', 
+                    breed: '', 
+                    gender: 'Male', 
+                    age: '1 Year',
+                    type: 'Dog',
+                    weight: '',
+                    description: '',
+                    image: null
+                });
                 fetchUserPets();
             } else {
                 Alert.alert("Error", data.error || "Failed to add pet.");
@@ -2078,15 +2100,71 @@ export default function App() {
                     <View style={{ marginTop: 20 }}>
                         <Text style={styles.pageTitle}>Pet Health & Wellness</Text>
 
+                        {/* Urgent Reminder (from Image 4) */}
+                        {reminders.length > 0 && (
+                            <View style={{ backgroundColor: '#fff1f2', borderLeftWidth: 4, borderLeftColor: '#ef4444', borderRadius: 16, padding: 20, marginBottom: 25, flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+                                <View style={{ width: 45, height: 45, borderRadius: 25, backgroundColor: '#fee2e2', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Ionicons name="alert-circle" size={24} color="#ef4444" />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#991b1b' }}>Urgent Reminder</Text>
+                                    <Text style={{ fontSize: 13, color: '#b91c1c', marginTop: 2 }}>{reminders[0].title} is due soon! Check records for details.</Text>
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Your Pet Profiles (Image 4) */}
+                        <View style={{ marginBottom: 30 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+                                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1e293b' }}>Your Pet Profiles</Text>
+                                <TouchableOpacity onPress={() => setIsAddPetModalVisible(true)}>
+                                    <Text style={{ fontSize: 13, color: '#3b82f6', fontWeight: 'bold' }}>+ Add Pet</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 15, paddingRight: 20 }}>
+                                {userPets.length === 0 ? (
+                                    <TouchableOpacity 
+                                        style={{ width: 160, height: 200, backgroundColor: '#f8fafc', borderRadius: 20, borderStyle: 'dashed', borderWidth: 2, borderColor: '#e2e8f0', justifyContent: 'center', alignItems: 'center' }}
+                                        onPress={() => setIsAddPetModalVisible(true)}
+                                    >
+                                        <Ionicons name="add" size={30} color="#94a3b8" />
+                                        <Text style={{ fontSize: 12, color: '#94a3b8', marginTop: 8 }}>Add New Pet</Text>
+                                    </TouchableOpacity>
+                                ) : (
+                                    userPets.map((p) => (
+                                        <View key={p.id} style={{ width: 180, backgroundColor: 'white', borderRadius: 20, padding: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
+                                            <Image 
+                                                source={{ uri: p.pet_image?.startsWith('http') ? p.pet_image : `${API_BASE_URL}/${p.pet_image}` }} 
+                                                style={{ width: '100%', height: 110, borderRadius: 15, marginBottom: 12 }} 
+                                            />
+                                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1e293b' }}>{p.pet_name}</Text>
+                                            <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>{p.pet_breed}</Text>
+                                            
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 12 }}>
+                                                <View>
+                                                    <Text style={{ fontSize: 10, color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Weight</Text>
+                                                    <Text style={{ fontSize: 12, color: '#1e293b', fontWeight: 'bold' }}>{p.pet_weight || 'N/A'}</Text>
+                                                </View>
+                                                <View style={{ alignItems: 'flex-end' }}>
+                                                    <Text style={{ fontSize: 10, color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Next Visit</Text>
+                                                    <Text style={{ fontSize: 12, color: '#3b82f6', fontWeight: 'bold' }}>{p.next_visit ? new Date(p.next_visit).toLocaleDateString() : 'None'}</Text>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    ))
+                                )}
+                            </ScrollView>
+                        </View>
+
                         {/* AI Symptom Checker Section */}
-                        <View style={{ backgroundColor: 'white', borderRadius: 20, padding: 20, marginBottom: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 }}>
+                        <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 20, marginBottom: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 4 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, gap: 10 }}>
-                                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Ionicons name="medical" size={20} color="#3b82f6" />
+                                <View style={{ width: 45, height: 45, borderRadius: 22.5, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Ionicons name="sparkles" size={22} color="#3b82f6" />
                                 </View>
                                 <View>
                                     <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1e293b' }}>AI Symptom Checker</Text>
-                                    <Text style={{ fontSize: 12, color: '#3b82f6', fontWeight: 'bold' }}>POWERED BY PETCLOUD AI</Text>
+                                    <Text style={{ fontSize: 11, color: '#3b82f6', fontWeight: '800' }}>POWERED BY PETCLOUD AI</Text>
                                 </View>
                             </View>
                             
@@ -3290,6 +3368,47 @@ export default function App() {
                         </LinearGradient>
 
                         <ScrollView style={{ padding: 25, maxHeight: 600 }}>
+                            {/* Image Picker */}
+                            <TouchableOpacity 
+                                style={{ 
+                                    width: 100, 
+                                    height: 100, 
+                                    borderRadius: 50, 
+                                    backgroundColor: '#f1f5f9', 
+                                    alignSelf: 'center', 
+                                    justifyContent: 'center', 
+                                    alignItems: 'center',
+                                    marginBottom: 20,
+                                    borderWidth: 2,
+                                    borderColor: '#e2e8f0',
+                                    borderStyle: 'dashed',
+                                    overflow: 'hidden'
+                                }}
+                                onPress={async () => {
+                                    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                                    if (status !== 'granted') return;
+                                    let result = await ImagePicker.launchImageLibraryAsync({
+                                        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                                        allowsEditing: true,
+                                        aspect: [1, 1],
+                                        quality: 0.5,
+                                        base64: true,
+                                    });
+                                    if (!result.canceled) {
+                                        setNewPetData({ ...newPetData, image: `data:image/jpeg;base64,${result.assets[0].base64}` });
+                                    }
+                                }}
+                            >
+                                {newPetData.image ? (
+                                    <Image source={{ uri: newPetData.image }} style={{ width: '100%', height: '100%' }} />
+                                ) : (
+                                    <>
+                                        <Ionicons name="camera" size={32} color="#94a3b8" />
+                                        <Text style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>Add Photo</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+
                             <Text style={styles.formLabel}>Pet Name *</Text>
                             <TextInput 
                                 style={styles.formInput} 
@@ -3297,6 +3416,22 @@ export default function App() {
                                 value={newPetData.name} 
                                 onChangeText={(text) => setNewPetData({ ...newPetData, name: text })} 
                             />
+
+                            <Text style={styles.formLabel}>Pet Type</Text>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                                {['Dog', 'Cat', 'Bird', 'Rabbit', 'Other'].map(t => (
+                                    <TouchableOpacity 
+                                        key={t}
+                                        onPress={() => setNewPetData({ ...newPetData, type: t })}
+                                        style={[
+                                            { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#e2e8f0', backgroundColor: '#f8fafc' },
+                                            newPetData.type === t && { borderColor: '#3b82f6', backgroundColor: '#eff6ff' }
+                                        ]}
+                                    >
+                                        <Text style={[{ fontSize: 13, fontWeight: '600', color: '#64748b' }, newPetData.type === t && { color: '#3b82f6' }]}>{t}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                             
                             <Text style={styles.formLabel}>Breed</Text>
                             <TextInput 
@@ -3306,28 +3441,50 @@ export default function App() {
                                 onChangeText={(text) => setNewPetData({ ...newPetData, breed: text })} 
                             />
                             
-                            <Text style={styles.formLabel}>Gender</Text>
-                            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
-                                {['Male', 'Female'].map(g => (
-                                    <TouchableOpacity 
-                                        key={g} 
-                                        style={[
-                                            { flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center', backgroundColor: '#f8fafc' }, 
-                                            newPetData.gender === g && { borderColor: '#3b82f6', backgroundColor: '#eff6ff' }
-                                        ]} 
-                                        onPress={() => setNewPetData({ ...newPetData, gender: g })}
-                                    >
-                                        <Text style={[{ fontSize: 14, fontWeight: '600', color: '#64748b' }, newPetData.gender === g && { color: '#3b82f6' }]}>{g}</Text>
-                                    </TouchableOpacity>
-                                ))}
+                            <View style={{ flexDirection: 'row', gap: 15 }}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.formLabel}>Gender</Text>
+                                    <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
+                                        {['Male', 'Female'].map(g => (
+                                            <TouchableOpacity 
+                                                key={g} 
+                                                style={[
+                                                    { flex: 1, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center', backgroundColor: '#f8fafc' }, 
+                                                    newPetData.gender === g && { borderColor: '#3b82f6', backgroundColor: '#eff6ff' }
+                                                ]} 
+                                                onPress={() => setNewPetData({ ...newPetData, gender: g })}
+                                            >
+                                                <Text style={[{ fontSize: 13, fontWeight: '600', color: '#64748b' }, newPetData.gender === g && { color: '#3b82f6' }]}>{g}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.formLabel}>Age</Text>
+                                    <TextInput 
+                                        style={styles.formInput} 
+                                        placeholder="e.g. 2 Years" 
+                                        value={newPetData.age} 
+                                        onChangeText={(text) => setNewPetData({ ...newPetData, age: text })} 
+                                    />
+                                </View>
                             </View>
 
-                            <Text style={styles.formLabel}>Age</Text>
+                            <Text style={styles.formLabel}>Weight</Text>
                             <TextInput 
                                 style={styles.formInput} 
-                                placeholder="e.g. 2 Years" 
-                                value={newPetData.age} 
-                                onChangeText={(text) => setNewPetData({ ...newPetData, age: text })} 
+                                placeholder="e.g. 5 kg" 
+                                value={newPetData.weight} 
+                                onChangeText={(text) => setNewPetData({ ...newPetData, weight: text })} 
+                            />
+
+                            <Text style={styles.formLabel}>Description</Text>
+                            <TextInput 
+                                style={[styles.formInput, { height: 100, textAlignVertical: 'top' }]} 
+                                placeholder="Tell us about your pet..." 
+                                multiline 
+                                value={newPetData.description} 
+                                onChangeText={(text) => setNewPetData({ ...newPetData, description: text })} 
                             />
 
                             <View style={{ height: 10 }} />
@@ -3346,8 +3503,8 @@ export default function App() {
                                         end={{ x: 1, y: 1 }}
                                         style={styles.premiumBtnGradient}
                                     >
-                                        <Ionicons name="add-circle-outline" size={22} color="white" style={{ marginRight: 8 }} />
                                         <Text style={styles.premiumBtnText}>Add to Family</Text>
+                                        <Ionicons name="heart" size={18} color="white" style={{ marginLeft: 8 }} />
                                     </LinearGradient>
                                 )}
                             </TouchableOpacity>

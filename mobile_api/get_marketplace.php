@@ -37,7 +37,7 @@ try {
         'Comfort Pet Bed' => 'images/Comfort Pet Bed.webp',
         'Interactive Cat Toy' => 'images/cat_toy.jpg',
         'Premium Dog Food' => 'images/premium_dog_food.webp',
-        'Puppy Food' => 'images/dog_food.jpg'
+        'Puppy Food' => 'images/puppy_food.avif'
     ];
 
     foreach ($products as &$p) {

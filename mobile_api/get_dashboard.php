@@ -33,8 +33,13 @@ try {
     else
         $greeting = "Good Night";
 
-    // 3. User Pets
-    $stmt = $pdo->prepare("SELECT id, pet_name, pet_breed, pet_image, status FROM user_pets WHERE user_id = ?");
+    // 3. User Pets with Health Metrics
+    $stmt = $pdo->prepare("
+        SELECT id, pet_name, pet_breed, pet_image, status, pet_weight,
+               (SELECT appointment_date FROM appointments WHERE pet_id = user_pets.id AND status != 'cancelled' AND appointment_date >= CURDATE() ORDER BY appointment_date ASC LIMIT 1) as next_visit
+        FROM user_pets 
+        WHERE user_id = ?
+    ");
     $stmt->execute([$user_id]);
     $pets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -145,7 +150,7 @@ try {
         'Comfort Pet Bed' => 'images/Comfort Pet Bed.webp',
         'Interactive Cat Toy' => 'images/cat_toy.jpg',
         'Premium Dog Food' => 'images/premium_dog_food.webp',
-        'Puppy Food' => 'images/dog_food.jpg'
+        'Puppy Food' => 'images/puppy_food.avif'
     ];
 
     foreach ($orders as &$o) {

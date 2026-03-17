@@ -33,14 +33,35 @@ try {
 
     $whereSQL = implode(" AND ", $whereClauses);
 
-    // Count total results
-    $countQuery = "SELECT COUNT(*) as total
-                   FROM pet_rehoming_listings prl
-                   WHERE $whereSQL";
+    // Count total results - Union logic
+    $countQuery = "SELECT SUM(total) as total FROM (
+        SELECT COUNT(*) as total FROM pet_rehoming_listings prl WHERE prl.status = 'Approved' " . (isset($_GET['pet_type_id']) ? " AND prl.pet_type_id = ?" : "") . "
+        UNION ALL
+        SELECT COUNT(*) as total FROM adoption_listings al WHERE al.status IN ('active', 'Approved') " . (isset($_GET['pet_type_id']) ? " AND (
+            CASE 
+                WHEN ? = 1 THEN al.pet_type = 'dog'
+                WHEN ? = 2 THEN al.pet_type = 'cat'
+                WHEN ? = 3 THEN al.pet_type = 'bird'
+                WHEN ? = 4 THEN al.pet_type = 'rabbit'
+                ELSE 0
+            END
+        )" : "") . "
+    ) as combined_total";
 
     $countStmt = $pdo->prepare($countQuery);
-    $countStmt->execute($params);
-    $totalRecords = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+    
+    $paramsCount = [];
+    if (isset($_GET['pet_type_id'])) {
+        $typeId = intval($_GET['pet_type_id']);
+        $paramsCount[] = $typeId; // v2
+        $paramsCount[] = $typeId; // v1 CASE 1
+        $paramsCount[] = $typeId; // v1 CASE 2
+        $paramsCount[] = $typeId; // v1 CASE 3
+        $paramsCount[] = $typeId; // v1 CASE 4
+    }
+
+    $countStmt->execute($paramsCount);
+    $totalRecords = (int) $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
     $totalPages = ceil($totalRecords / $limit);
 
     // Get listings - Direct UNION to fetch from both tables
