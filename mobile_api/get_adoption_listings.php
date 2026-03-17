@@ -43,9 +43,10 @@ try {
     $totalRecords = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
     $totalPages = ceil($totalRecords / $limit);
 
-    // Get listings
-    $query = "SELECT 
-                prl.id,
+    // Get listings - Direct UNION to fetch from both tables
+    // We Map adoption_listings (legacy) to match the mobile app's expected structure
+    $query = "(SELECT 
+                prl.id as id,
                 prl.pet_name,
                 prl.age_years,
                 prl.age_months,
@@ -60,43 +61,103 @@ try {
                 prl.location,
                 prl.city,
                 prl.state,
-                prl.primary_image,
+                prl.primary_image as image,
                 prl.views_count,
                 prl.is_featured,
                 prl.created_at,
-                pt.name AS pet_type,
-                b.name AS breed_name
+                pt.name AS pet_type_name,
+                b.name AS breed_name,
+                'v2' as source_version
               FROM pet_rehoming_listings prl
               JOIN pet_types pt ON prl.pet_type_id = pt.id
               LEFT JOIN breeds b ON prl.breed_id = b.id
-              WHERE $whereSQL
-              ORDER BY prl.is_featured DESC, prl.created_at DESC
+              WHERE prl.status = 'Approved' " . (isset($_GET['pet_type_id']) ? " AND prl.pet_type_id = ?" : "") . ")
+              UNION ALL
+              (SELECT 
+                al.id as id,
+                al.pet_name,
+                CAST(SUBSTRING_INDEX(al.age, ' ', 1) AS UNSIGNED) as age_years,
+                0 as age_months,
+                al.gender,
+                'Medium' as size,
+                0.0 as weight_kg,
+                'Unknown' as color,
+                1 as is_vaccinated,
+                0 as is_neutered,
+                al.description as temperament,
+                0.0 as adoption_fee,
+                'Local' as location,
+                'Unknown' as city,
+                'Unknown' as state,
+                al.image_url as image,
+                0 as views_count,
+                0 as is_featured,
+                al.created_at,
+                al.pet_type as pet_type_name,
+                al.breed as breed_name,
+                'v1' as source_version
+              FROM adoption_listings al
+              WHERE al.status IN ('active', 'Approved') " . (isset($_GET['pet_type_id']) ? " AND (
+                CASE 
+                    WHEN ? = 1 THEN al.pet_type = 'dog'
+                    WHEN ? = 2 THEN al.pet_type = 'cat'
+                    WHEN ? = 3 THEN al.pet_type = 'bird'
+                    WHEN ? = 4 THEN al.pet_type = 'rabbit'
+                    ELSE 0
+                END
+              )" : "") . ")
+              ORDER BY is_featured DESC, created_at DESC
               LIMIT $limit OFFSET $offset";
 
     $stmt = $pdo->prepare($query);
-    $stmt->execute($params);
+    
+    // Prepare bind parameters
+    $bindParams = [];
+    if (isset($_GET['pet_type_id'])) {
+        $typeId = intval($_GET['pet_type_id']);
+        $bindParams[] = $typeId; // For v2
+        $bindParams[] = $typeId; // For v1 CASE 1
+        $bindParams[] = $typeId; // For v1 CASE 2
+        $bindParams[] = $typeId; // For v1 CASE 3
+        $bindParams[] = $typeId; // For v1 CASE 4
+    }
+
+    $stmt->execute($bindParams);
     $listings = [];
 
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        // Format image URL
+        $imageUrl = $row['image'] ?: 'images/placeholder-pet.jpg';
+        if (!preg_match('/^http/', $imageUrl)) {
+            $imageUrl = 'https://petcloud-new.onrender.com/' . ltrim($imageUrl, '/');
+        }
+
+        // Format age display
+        $ageDisplay = $row['age_years'] . ' yrs';
+        if ($row['age_years'] == 0 && $row['age_months'] > 0) {
+            $ageDisplay = $row['age_months'] . ' mos';
+        }
+
         $listings[] = [
             'id' => (int) $row['id'],
             'pet_name' => $row['pet_name'],
             'age' => [
                 'years' => (int) $row['age_years'],
                 'months' => (int) $row['age_months'],
-                'display' => $row['age_years'] . ' yrs'
+                'display' => $ageDisplay
             ],
-            'gender' => $row['gender'],
-            'size' => $row['size'],
+            'gender' => $row['gender'] ?: 'Unknown',
+            'size' => $row['size'] ?: 'Medium',
             'weight_kg' => (float) $row['weight_kg'],
-            'image' => $row['primary_image'],
+            'image' => $imageUrl,
             'pet_type' => [
-                'name' => $row['pet_type']
+                'name' => ucfirst($row['pet_type_name'])
             ],
             'breed' => [
-                'name' => $row['breed_name'] ?? 'Unknown'
+                'name' => $row['breed_name'] ?: 'Unknown'
             ],
-            'posted_at' => $row['created_at']
+            'posted_at' => $row['created_at'],
+            'source' => $row['source_version']
         ];
     }
 

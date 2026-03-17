@@ -1047,7 +1047,16 @@ export default function App() {
         }
     }, [activeItem]);
 
-    // Rehoming Form State
+    useEffect(() => {
+        if (rehomingView === 'form' && user && !rehomingData.location) {
+            setRehomingData(prev => ({
+                ...prev,
+                location: profileData.location || user.location || '',
+                city: profileData.location?.split(',')[0] || user.location?.split(',')[0] || ''
+            }));
+        }
+    }, [rehomingView, user]);
+
     const [rehomingData, setRehomingData] = useState({
         pet_name: '',
         pet_type_id: '1', // Default to Dog
@@ -1209,8 +1218,8 @@ export default function App() {
         { id: null, name: 'All Pets' },
         { id: 1, name: 'Dogs' },
         { id: 2, name: 'Cats' },
-        { id: 3, name: 'Rabbits' },
-        { id: 4, name: 'Birds' }
+        { id: 3, name: 'Birds' },
+        { id: 4, name: 'Rabbits' }
     ];
 
     const fetchAdoptionListings = async (typeId = null) => {
@@ -1832,10 +1841,15 @@ export default function App() {
                                     {profileSaving ? (
                                         <ActivityIndicator color="#fff" />
                                     ) : (
-                                        <>
+                                        <LinearGradient
+                                            colors={['#3b82f6', '#2563eb']}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={styles.premiumBtnGradient}
+                                        >
                                             <Ionicons name="checkmark-circle-outline" size={20} color="white" style={{ marginRight: 8 }} />
                                             <Text style={styles.premiumBtnText}>Save Changes</Text>
-                                        </>
+                                        </LinearGradient>
                                     )}
                                 </TouchableOpacity>
                             </View>
@@ -1887,42 +1901,46 @@ export default function App() {
                                 ) : (
                                     <View style={styles.listingsGrid}>
                                         {adoptionListings.map((pet) => (
-                                            <View key={pet.id} style={styles.adoptionCard}>
+                                            <TouchableOpacity 
+                                                key={pet.id} 
+                                                style={styles.adoptionCard}
+                                                onPress={() => {
+                                                    const mappedPet = {
+                                                        ...pet,
+                                                        pet_name: pet.pet_name,
+                                                        pet_image: pet.image,
+                                                        pet_type: pet.pet_type?.name,
+                                                        pet_breed: pet.breed?.name,
+                                                        pet_age: pet.age?.display || "N/A",
+                                                        pet_description: pet.description || "No description available.",
+                                                        pet_weight: pet.weight_kg ? pet.weight_kg + " kg" : "N/A",
+                                                        pet_gender: pet.gender || "Unknown",
+                                                        is_adoption: true,
+                                                        listing_id: pet.id
+                                                    };
+                                                    setSelectedPet(mappedPet);
+                                                    setIsPetModalVisible(true);
+                                                }}
+                                            >
                                                 <Image source={{ uri: getImageUrl(pet.image) }} style={styles.adoptionImage} />
                                                 <View style={styles.adoptionInfo}>
                                                     <View style={styles.adoptionHeaderRow}>
                                                         <Text style={styles.adoptionName}>{pet.pet_name}</Text>
-                                                        <View style={styles.typeTag}>
-                                                            <Text style={styles.typeTagText}>{(pet.pet_type?.name || 'Pet').toUpperCase()}</Text>
+                                                        <View style={[styles.typeTag, pet.pet_type?.name?.toLowerCase() === 'cat' && { backgroundColor: '#fef3c7' }]}>
+                                                            <Text style={[styles.typeTagText, pet.pet_type?.name?.toLowerCase() === 'cat' && { color: '#92400e' }]}>
+                                                                {(pet.pet_type?.name || 'Pet').toUpperCase()}
+                                                            </Text>
                                                         </View>
                                                     </View>
                                                     <Text style={styles.adoptionDetails}>
-                                                        {pet.age?.years || 0} yrs • {pet.breed?.name || 'Unknown'}
+                                                        {pet.age?.display || 'N/A'} • {pet.breed?.name || 'Unknown'}
                                                     </Text>
-                                                    <TouchableOpacity
-                                                        style={styles.viewProfileBtn}
-                                                        onPress={() => {
-                                                            const mappedPet = {
-                                                                ...pet,
-                                                                pet_name: pet.pet_name,
-                                                                pet_image: pet.image,
-                                                                pet_type: pet.pet_type?.name,
-                                                                pet_breed: pet.breed?.name,
-                                                                pet_age: (pet.age?.years || 0) + " yrs",
-                                                                pet_description: pet.description || "No description available.",
-                                                                pet_weight: pet.weight_kg ? pet.weight_kg + " kg" : "N/A",
-                                                                pet_gender: pet.gender || "Unknown",
-                                                                is_adoption: true,
-                                                                listing_id: pet.id
-                                                            };
-                                                            setSelectedPet(mappedPet);
-                                                            setIsPetModalVisible(true);
-                                                        }}
-                                                    >
-                                                        <Text style={styles.viewProfileText}>View Profile</Text>
-                                                    </TouchableOpacity>
+                                                    <View style={styles.viewProfileBtnRow}>
+                                                        <Text style={styles.viewProfileBtnText}>View Details</Text>
+                                                        <Ionicons name="chevron-forward" size={16} color="#3b82f6" />
+                                                    </View>
                                                 </View>
-                                            </View>
+                                            </TouchableOpacity>
                                         ))}
                                         {adoptionListings.length === 0 && (
                                             <View style={styles.emptyStateContainer}>
@@ -2420,9 +2438,14 @@ export default function App() {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
                             <Text style={[styles.pageTitle, { fontSize: 20, marginBottom: 0 }]}>{rehomingView === 'list' ? 'My Rehoming Listings' : 'List a Pet'}</Text>
                             {rehomingView === 'list' ? (
-                                <TouchableOpacity style={styles.premiumBtnSmall} onPress={() => setRehomingView('form')}>
-                                    <Ionicons name="add" size={18} color="white" style={{ marginRight: 4 }} />
-                                    <Text style={styles.premiumBtnTextSmall}>Rehome Pet</Text>
+                                <TouchableOpacity style={styles.stylishAddBtn} onPress={() => setRehomingView('form')}>
+                                    <LinearGradient
+                                        colors={['#10b981', '#059669']}
+                                        style={styles.stylishAddBtnGradient}
+                                    >
+                                        <Ionicons name="add" size={20} color="white" style={{ marginRight: 4 }} />
+                                        <Text style={styles.stylishAddBtnText}>Rehome a New Pet</Text>
+                                    </LinearGradient>
                                 </TouchableOpacity>
                             ) : (
                                 <TouchableOpacity onPress={() => setRehomingView('list')} style={{ paddingVertical: 8 }}>
@@ -3317,10 +3340,15 @@ export default function App() {
                                 {isProcessing ? (
                                     <ActivityIndicator color="white" />
                                 ) : (
-                                    <>
+                                    <LinearGradient
+                                        colors={['#3b82f6', '#2563eb']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 1 }}
+                                        style={styles.premiumBtnGradient}
+                                    >
                                         <Ionicons name="add-circle-outline" size={22} color="white" style={{ marginRight: 8 }} />
                                         <Text style={styles.premiumBtnText}>Add to Family</Text>
-                                    </>
+                                    </LinearGradient>
                                 )}
                             </TouchableOpacity>
                         </ScrollView>
@@ -4449,14 +4477,52 @@ const styles = StyleSheet.create({
         color: '#94a3b8',
     },
     rehomeDeleteBtn: {
-        width: 32,
-        height: 32,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#fee2e2',
-        backgroundColor: 'white',
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        backgroundColor: '#fef2f2',
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    viewProfileBtnRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        marginTop: 5,
+    },
+    viewProfileBtnText: {
+        color: '#3b82f6',
+        fontWeight: 'bold',
+        fontSize: 14,
+        marginRight: 4,
+    },
+    premiumBtnGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        height: '100%',
+        borderRadius: 16,
+    },
+    stylishAddBtn: {
+        borderRadius: 14,
+        overflow: 'hidden',
+        elevation: 4,
+        shadowColor: '#10b981',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+    },
+    stylishAddBtnGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+    },
+    stylishAddBtnText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 15,
     },
     statusBadgeSmall: {
         paddingHorizontal: 8,
