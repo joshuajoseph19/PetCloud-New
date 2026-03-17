@@ -1975,9 +1975,9 @@ export default function App() {
                                         <View style={styles.petCardContent}>
                                             <Image source={{ uri: getImageUrl(pet.pet_image) }} style={styles.petImageCircle} />
                                             <View style={styles.petInfoSection}>
-                                                <Text style={styles.petNameText}>{pet.pet_name.toLowerCase()}</Text>
+                                                <Text style={[styles.petNameText, { textTransform: 'capitalize' }]}>{pet.pet_name}</Text>
                                                 <Text style={styles.petBreedText}>
-                                                    {pet.pet_breed.toLowerCase()} • {pet.pet_age || '3 months'}
+                                                    {pet.pet_breed} • {pet.pet_age || '3 months'}
                                                 </Text>
 
                                                 <View style={styles.petActionRow}>

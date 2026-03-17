@@ -24,7 +24,7 @@ if (empty($user_id)) {
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT id, full_name, email, phone, location, bio, profile_image, user_type FROM users WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, full_name, email, phone, location, bio, profile_image, role FROM users WHERE id = ?");
     $stmt->execute([$user_id]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
