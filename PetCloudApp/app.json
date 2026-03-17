@@ -4,7 +4,7 @@
     "slug": "pet-cloud",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.jpg",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
@@ -20,10 +20,9 @@
     "android": {
       "package": "com.joshuajoseph.petcloud",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.jpg",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "usesCleartextTraffic": true
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -32,6 +31,9 @@
       "eas": {
         "projectId": "a7664638-e627-46a2-9d65-6f1bfa92f529"
       }
-    }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
