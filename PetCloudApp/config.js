@@ -3,12 +3,7 @@ import { Platform } from 'react-native';
 // UPDATE THIS IP with your laptop's current IPv4 address from 'ipconfig'
 const DEV_IP = '192.168.137.1';
 
-export const API_BASE_URL = Platform.select({
-    web: 'http://localhost/PetCloud',
-    android: `http://${DEV_IP}/PetCloud`,
-    ios: `http://${DEV_IP}/PetCloud`,
-    default: `http://${DEV_IP}/PetCloud`,
-});
+export const API_BASE_URL = 'https://petcloud-new.onrender.com';
 
 export const API_URL = `${API_BASE_URL}/mobile_api`;
 

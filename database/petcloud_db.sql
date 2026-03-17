@@ -26,6 +26,8 @@ SET time_zone = "+00:00";
 --
 -- Table structure for table `adoption_applications`
 --
+CREATE DATABASE petcloud_db;
+USE petcloud_db;
 
 CREATE TABLE `adoption_applications` (
   `id` int(11) NOT NULL,
