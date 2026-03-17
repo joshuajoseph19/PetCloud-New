@@ -47,6 +47,9 @@ export default function App() {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [fullName, setFullName] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isPasswordResetMode, setIsPasswordResetMode] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [menuVisible, setMenuVisible] = useState(false);
     const [activeItem, setActiveItem] = useState('Overview');
@@ -176,6 +179,11 @@ export default function App() {
             console.log('Login Result:', data);
 
             if (data.success) {
+                if (data.user.role !== 'client') {
+                    Alert.alert('Access Denied', 'This app is only for Pet Owners. Please use the web portal for Shop Owner/Admin access.');
+                    setIsProcessing(false);
+                    return;
+                }
                 setUser(data.user);
                 setScreen('dashboard');
                 fetchDashboardData(data.user.id);
@@ -192,6 +200,70 @@ export default function App() {
                 '3. Check PC IP in config.js (Current: ' + API_URL + ')\n' +
                 '4. Ensure Firewall is not blocking port 80.'
             );
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleSignup = async () => {
+        if (!fullName || !email || !password || !confirmPassword) {
+            Alert.alert('Missing Info', 'Please fill in all fields.');
+            return;
+        }
+        if (password !== confirmPassword) {
+            Alert.alert('Error', 'Passwords do not match.');
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            const response = await fetchWithTimeout(`${API_URL}/register.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ full_name: fullName, email, password }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                Alert.alert('Success', 'Account created! Welcome to PetCloud.');
+                setUser(data.user);
+                setScreen('dashboard');
+                fetchDashboardData(data.user.id);
+            } else {
+                Alert.alert('Signup Failed', data.error || 'Could not create account.');
+            }
+        } catch (error) {
+            console.error('Signup Error:', error);
+            Alert.alert('Error', 'Registration search failed. Check your connection.');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleForgotPassword = async () => {
+        if (!email) {
+            Alert.alert('Error', 'Please enter your email address first.');
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            const response = await fetchWithTimeout(`${API_URL}/forgot_password.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                Alert.alert('Reset Sent', 'Please check your email for password reset instructions.');
+                setIsPasswordResetMode(false);
+            } else {
+                Alert.alert('Error', data.error || 'Failed to send reset email.');
+            }
+        } catch (error) {
+            console.error('Reset Error:', error);
+            Alert.alert('Error', 'Could not reach server.');
         } finally {
             setIsProcessing(false);
         }
@@ -1028,9 +1100,18 @@ export default function App() {
         return (
             <View style={styles.container}>
                 <View style={styles.authBox}>
-                    <Image source={require('./assets/icon.png')} style={styles.logo} />
-                    <Text style={styles.title}>Welcome Back!</Text>
-                    <Text style={styles.subtitle}>Login to PetCloud</Text>
+                    <Image source={require('./assets/icon.png')} style={styles.logo} resizeMode="contain" />
+                    <Text style={styles.title}>{isPasswordResetMode ? 'Reset Password' : (screen === 'signup' ? 'Join PetCloud' : 'Welcome Back!')}</Text>
+                    <Text style={styles.subtitle}>{isPasswordResetMode ? 'Enter email for reset link' : (screen === 'signup' ? 'Create a Pet Owner account' : 'Login to PetCloud')}</Text>
+
+                    {screen === 'signup' && !isPasswordResetMode && (
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Full Name"
+                            value={fullName}
+                            onChangeText={setFullName}
+                        />
+                    )}
 
                     <TextInput
                         style={styles.input}
@@ -1040,29 +1121,62 @@ export default function App() {
                         keyboardType="email-address"
                         autoCapitalize="none"
                     />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Password"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                    />
+
+                    {!isPasswordResetMode && (
+                        <>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Password"
+                                value={password}
+                                onChangeText={setPassword}
+                                secureTextEntry
+                            />
+                            {screen === 'signup' && (
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Confirm Password"
+                                    value={confirmPassword}
+                                    onChangeText={setConfirmPassword}
+                                    secureTextEntry
+                                />
+                            )}
+                        </>
+                    )}
 
                     <TouchableOpacity
                         style={[styles.button, isProcessing && { opacity: 0.7 }]}
-                        onPress={handleLogin}
+                        onPress={isPasswordResetMode ? handleForgotPassword : (screen === 'signup' ? handleSignup : handleLogin)}
                         disabled={isProcessing}
                     >
                         {isProcessing ? (
                             <ActivityIndicator color="white" />
                         ) : (
-                            <Text style={styles.buttonText}>Sign In</Text>
+                            <Text style={styles.buttonText}>
+                                {isPasswordResetMode ? 'Send Reset Link' : (screen === 'signup' ? 'Create Account' : 'Sign In')}
+                            </Text>
                         )}
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={{ marginTop: 15 }}>
-                        <Text style={{ color: '#3b82f6', textAlign: 'center' }}>Forgot Password?</Text>
+                    <TouchableOpacity 
+                        style={{ marginTop: 20 }} 
+                        onPress={() => {
+                            if (isPasswordResetMode) {
+                                setIsPasswordResetMode(false);
+                            } else {
+                                setScreen(screen === 'login' ? 'signup' : 'login');
+                            }
+                        }}
+                    >
+                        <Text style={{ color: '#3b82f6', textAlign: 'center', fontWeight: 'bold' }}>
+                            {isPasswordResetMode ? 'Back to Login' : (screen === 'login' ? "Don't have an account? Sign Up" : "Already have an account? Sign In")}
+                        </Text>
                     </TouchableOpacity>
+
+                    {screen === 'login' && !isPasswordResetMode && (
+                        <TouchableOpacity style={{ marginTop: 15 }} onPress={() => setIsPasswordResetMode(true)}>
+                            <Text style={{ color: '#64748b', textAlign: 'center', fontSize: 13 }}>Forgot Password?</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
                 <StatusBar style="auto" />
             </View>
@@ -3191,10 +3305,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     logo: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        marginBottom: 15,
+        width: 150,
+        height: 80,
+        marginBottom: 10,
     },
     title: {
         fontSize: 24,
