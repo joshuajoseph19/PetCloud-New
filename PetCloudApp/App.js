@@ -2404,13 +2404,13 @@ export default function App() {
                         )}
                     </ScrollView>
                 ) : activeItem === 'Pet Rehoming' ? (
-                    <View style={{ marginTop: 20 }}>
+                    <View style={{ marginTop: 20, paddingHorizontal: 15 }}>
                         <View style={styles.sectionHeader}>
-                            <Text style={styles.pageTitle}>{rehomingView === 'list' ? 'My Rehoming Listings' : 'List a Pet'}</Text>
+                            <Text style={[styles.pageTitle, { fontSize: 20, marginBottom: 0 }]}>{rehomingView === 'list' ? 'My Rehoming Listings' : 'List a Pet'}</Text>
                             {rehomingView === 'list' ? (
                                 <TouchableOpacity style={styles.addBtnRehome} onPress={() => setRehomingView('form')}>
                                     <Ionicons name="add" size={16} color="white" />
-                                    <Text style={styles.addBtnTextRehome}>Rehome a New Pet</Text>
+                                    <Text style={styles.addBtnTextRehome}>Rehome Pet</Text>
                                 </TouchableOpacity>
                             ) : (
                                 <TouchableOpacity onPress={() => setRehomingView('list')}>
@@ -4317,6 +4317,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#f1f5f9',
+        shadowColor: '#64748b',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
     },
     rehomeEntryImg: {
         width: 80,
