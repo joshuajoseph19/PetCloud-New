@@ -1951,7 +1951,7 @@ export default function App() {
                         )}
                     </View>
                 ) : activeItem === 'My Pets' ? (
-                    <View style={{ marginTop: 20 }}>
+                    <View style={{ marginTop: 20, paddingHorizontal: 15 }}>
                         <Text style={styles.pageTitle}>My Pets</Text>
 
                         {petsLoading ? (
@@ -4064,6 +4064,7 @@ const styles = StyleSheet.create({
     },
     petActionRow: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         alignItems: 'center',
         gap: 8,
     },
