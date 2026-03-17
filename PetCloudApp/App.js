@@ -1765,25 +1765,33 @@ export default function App() {
             >
                 {activeItem === 'Profile' ? (
                     <View style={{ marginTop: 20, paddingHorizontal: 15 }}>
-                        <Text style={styles.pageTitle}>Edit Profile</Text>
-                        {profileLoading ? (
-                            <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
-                        ) : (
-                            <View style={styles.minimalCard}>
-                                <View style={{ alignItems: 'center', marginBottom: 20 }}>
-                                    <View style={{ position: 'relative' }}>
+                            <View style={{ alignItems: 'center', marginBottom: 30 }}>
+                                <View style={{ 
+                                    width: 120, 
+                                    height: 120, 
+                                    borderRadius: 60, 
+                                    backgroundColor: '#3b82f6', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 4 },
+                                    shadowOpacity: 0.1,
+                                    shadowRadius: 10,
+                                    elevation: 5
+                                }}>
+                                    {profileData.profile_image ? (
                                         <Image 
-                                            source={{ uri: profileData.profile_image || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData.full_name || 'User')}&background=3b82f6&color=fff&size=200` }} 
-                                            style={{ width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: '#3b82f6' }} 
+                                            source={{ uri: profileData.profile_image }} 
+                                            style={{ width: 120, height: 120, borderRadius: 60 }} 
                                         />
-                                        <TouchableOpacity 
-                                            style={{ position: 'absolute', bottom: 0, right: 0, backgroundColor: '#3b82f6', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'white' }}
-                                            onPress={handlePickImage}
-                                        >
-                                            <Ionicons name="camera" size={18} color="white" />
-                                        </TouchableOpacity>
-                                    </View>
+                                    ) : (
+                                        <Text style={{ fontSize: 40, color: 'white', fontWeight: 'bold' }}>
+                                            {profileData.full_name ? profileData.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'JJ'}
+                                        </Text>
+                                    )}
                                 </View>
+                                <Text style={{ fontSize: 32, fontWeight: 'bold', marginTop: 20, color: '#000' }}>Edit Profile</Text>
+                            </View>
                                 
                                 <Text style={styles.formLabel}>Full Name</Text>
                                 <TextInput
@@ -1793,14 +1801,6 @@ export default function App() {
                                     placeholder="Enter full name"
                                 />
 
-                                <Text style={styles.formLabel}>Phone Number</Text>
-                                <TextInput
-                                    style={styles.formInput}
-                                    value={profileData.phone}
-                                    onChangeText={(text) => setProfileData({ ...profileData, phone: text })}
-                                    placeholder="Enter phone number"
-                                    keyboardType="phone-pad"
-                                />
 
                                 <Text style={styles.formLabel}>Location</Text>
                                 <TextInput
@@ -1827,8 +1827,6 @@ export default function App() {
                                     {profileSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.payBtnText}>Save Changes</Text>}
                                 </TouchableOpacity>
                             </View>
-                        )}
-                    </View>
                 ) : activeItem === 'Adoption' ? (
                     <View style={{ marginTop: 20 }}>
                         <Text style={styles.pageTitle}>Find Your New Best Friend</Text>
