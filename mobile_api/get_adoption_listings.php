@@ -77,7 +77,7 @@ try {
                 prl.color,
                 prl.is_vaccinated,
                 prl.is_neutered,
-                prl.temperament,
+                prl.pet_description as temperament,
                 prl.adoption_fee,
                 prl.location,
                 prl.city,
@@ -90,7 +90,7 @@ try {
                 b.name AS breed_name,
                 'v2' as source_version
               FROM pet_rehoming_listings prl
-              JOIN pet_types pt ON prl.pet_type_id = pt.id
+              LEFT JOIN pet_types pt ON prl.pet_type_id = pt.id
               LEFT JOIN breeds b ON prl.breed_id = b.id
               WHERE prl.status = 'Approved' " . (isset($_GET['pet_type_id']) ? " AND prl.pet_type_id = ?" : "") . ")
               UNION ALL
@@ -114,8 +114,8 @@ try {
                 0 as views_count,
                 0 as is_featured,
                 al.created_at,
-                al.pet_type as pet_type_name,
-                al.breed as breed_name,
+                al.pet_type AS pet_type_name,
+                al.breed AS breed_name,
                 'v1' as source_version
               FROM adoption_listings al
               WHERE al.status IN ('active', 'Approved') " . (isset($_GET['pet_type_id']) ? " AND (
