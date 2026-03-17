@@ -1153,6 +1153,7 @@ export default function App() {
                     <TextInput
                         style={styles.input}
                         placeholder="Email Address"
+                        placeholderTextColor="#94a3b8"
                         value={email}
                         onChangeText={setEmail}
                         keyboardType="email-address"
@@ -1164,6 +1165,7 @@ export default function App() {
                             <TextInput
                                 style={styles.input}
                                 placeholder="Password"
+                                placeholderTextColor="#94a3b8"
                                 value={password}
                                 onChangeText={setPassword}
                                 secureTextEntry
@@ -1172,6 +1174,7 @@ export default function App() {
                                 <TextInput
                                     style={styles.input}
                                     placeholder="Confirm Password"
+                                    placeholderTextColor="#94a3b8"
                                     value={confirmPassword}
                                     onChangeText={setConfirmPassword}
                                     secureTextEntry
@@ -1204,7 +1207,7 @@ export default function App() {
                             }
                         }}
                     >
-                        <Text style={{ color: '#3b82f6', textAlign: 'center', fontWeight: 'bold' }}>
+                        <Text style={{ color: '#4f46e5', textAlign: 'center', fontWeight: 'bold' }}>
                             {isPasswordResetMode ? 'Back to Login' : (screen === 'login' ? "Don't have an account? Sign Up" : "Already have an account? Sign In")}
                         </Text>
                     </TouchableOpacity>
@@ -1224,7 +1227,7 @@ export default function App() {
     if (!dashboardData && loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#3b82f6" />
+                <ActivityIndicator size="large" color="#4f46e5" />
             </View>
         );
     }
@@ -1428,6 +1431,7 @@ export default function App() {
                                             value={shippingDetails.phone}
                                             onChangeText={(t) => setShippingDetails({ ...shippingDetails, phone: t })}
                                             placeholder="Mobile number"
+                                            placeholderTextColor="#94a3b8"
                                         />
                                     </View>
                                     <TouchableOpacity style={styles.razorpayContinueBtn} onPress={() => setPaymentSubStep('Methods')}>
@@ -1666,7 +1670,7 @@ export default function App() {
                                             <Text style={styles.bankLogoText}>{selectedBank}</Text>
                                         </View>
                                         <Text style={styles.bankProcessingText}>Redirecting you to {selectedBank} Netbanking...</Text>
-                                        <ActivityIndicator size="large" color="#3b82f6" style={{ marginVertical: 30 }} />
+                                        <ActivityIndicator size="large" color="#4f46e5" style={{ marginVertical: 30 }} />
                                         <TouchableOpacity
                                             style={styles.simulatePayBtn}
                                             onPress={handlePlaceOrder}
@@ -1807,7 +1811,7 @@ export default function App() {
                                     width: 120, 
                                     height: 120, 
                                     borderRadius: 60, 
-                                    backgroundColor: '#3b82f6', 
+                                    backgroundColor: '#4f46e5', 
                                     alignItems: 'center', 
                                     justifyContent: 'center',
                                     shadowColor: '#000',
@@ -1864,7 +1868,7 @@ export default function App() {
                                         <ActivityIndicator color="#fff" />
                                     ) : (
                                         <LinearGradient
-                                            colors={['#3b82f6', '#2563eb']}
+                                            colors={['#4f46e5', '#2563eb']}
                                             start={{ x: 0, y: 0 }}
                                             end={{ x: 1, y: 1 }}
                                             style={styles.premiumBtnGradient}
@@ -1881,13 +1885,13 @@ export default function App() {
 
                         <View style={{ flexDirection: 'row', gap: 10, marginHorizontal: 15, marginBottom: 15 }}>
                             <TouchableOpacity 
-                                style={{ flex: 1, backgroundColor: adoptionView === 'listings' ? '#3b82f6' : '#f1f5f9', paddingVertical: 12, borderRadius: 12, alignItems: 'center' }}
+                                style={{ flex: 1, backgroundColor: adoptionView === 'listings' ? '#4f46e5' : '#f1f5f9', paddingVertical: 12, borderRadius: 12, alignItems: 'center' }}
                                 onPress={() => setAdoptionView('listings')}
                             >
                                 <Text style={{ color: adoptionView === 'listings' ? 'white' : '#64748b', fontWeight: 'bold' }}>Browse Pets</Text>
                             </TouchableOpacity>
                             <TouchableOpacity 
-                                style={{ flex: 1, backgroundColor: adoptionView === 'my_applications' ? '#3b82f6' : '#f1f5f9', paddingVertical: 12, borderRadius: 12, alignItems: 'center' }}
+                                style={{ flex: 1, backgroundColor: adoptionView === 'my_applications' ? '#4f46e5' : '#f1f5f9', paddingVertical: 12, borderRadius: 12, alignItems: 'center' }}
                                 onPress={() => { setAdoptionView('my_applications'); fetchAdoptionStatus(); }}
                             >
                                 <Text style={{ color: adoptionView === 'my_applications' ? 'white' : '#64748b', fontWeight: 'bold' }}>My Applications</Text>
@@ -1919,7 +1923,7 @@ export default function App() {
                                 </ScrollView>
 
                                 {adoptionLoading ? (
-                                    <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+                                    <ActivityIndicator size="large" color="#4f46e5" style={{ marginTop: 50 }} />
                                 ) : (
                                     <View style={styles.listingsGrid}>
                                         {adoptionListings.map((pet) => (
@@ -1976,7 +1980,7 @@ export default function App() {
                         ) : (
                             <View style={{ paddingHorizontal: 15 }}>
                                 {adoptionStatusLoading ? (
-                                    <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+                                    <ActivityIndicator size="large" color="#4f46e5" style={{ marginTop: 50 }} />
                                 ) : adoptionApplications.length === 0 ? (
                                     <View style={{ alignItems: 'center', padding: 40 }}>
                                         <Ionicons name="document-text-outline" size={60} color="#cbd5e1" />
@@ -2007,7 +2011,7 @@ export default function App() {
                         <Text style={styles.pageTitle}>My Pets</Text>
 
                         {petsLoading ? (
-                            <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+                            <ActivityIndicator size="large" color="#4f46e5" style={{ marginTop: 50 }} />
                         ) : (
                             <View style={styles.petGridRow}>
                                 {userPets.map((pet) => (
@@ -2118,7 +2122,7 @@ export default function App() {
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
                                 <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1e293b' }}>Your Pet Profiles</Text>
                                 <TouchableOpacity onPress={() => setIsAddPetModalVisible(true)}>
-                                    <Text style={{ fontSize: 13, color: '#3b82f6', fontWeight: 'bold' }}>+ Add Pet</Text>
+                                    <Text style={{ fontSize: 13, color: '#4f46e5', fontWeight: 'bold' }}>+ Add Pet</Text>
                                 </TouchableOpacity>
                             </View>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 15, paddingRight: 20 }}>
@@ -2147,7 +2151,7 @@ export default function App() {
                                                 </View>
                                                 <View style={{ alignItems: 'flex-end' }}>
                                                     <Text style={{ fontSize: 10, color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Next Visit</Text>
-                                                    <Text style={{ fontSize: 12, color: '#3b82f6', fontWeight: 'bold' }}>{p.next_visit ? new Date(p.next_visit).toLocaleDateString() : 'None'}</Text>
+                                                    <Text style={{ fontSize: 12, color: '#4f46e5', fontWeight: 'bold' }}>{p.next_visit ? new Date(p.next_visit).toLocaleDateString() : 'None'}</Text>
                                                 </View>
                                             </View>
                                         </View>
@@ -2160,11 +2164,11 @@ export default function App() {
                         <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 20, marginBottom: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 4 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, gap: 10 }}>
                                 <View style={{ width: 45, height: 45, borderRadius: 22.5, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Ionicons name="sparkles" size={22} color="#3b82f6" />
+                                    <Ionicons name="sparkles" size={22} color="#4f46e5" />
                                 </View>
                                 <View>
                                     <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1e293b' }}>AI Symptom Checker</Text>
-                                    <Text style={{ fontSize: 11, color: '#3b82f6', fontWeight: '800' }}>POWERED BY PETCLOUD AI</Text>
+                                    <Text style={{ fontSize: 11, color: '#4f46e5', fontWeight: '800' }}>POWERED BY PETCLOUD AI</Text>
                                 </View>
                             </View>
                             
@@ -2177,14 +2181,14 @@ export default function App() {
                                         </View>
                                     ) : (
                                         symptomChat.map((msg, idx) => (
-                                            <View key={idx} style={{ alignSelf: msg.type === 'user' ? 'flex-end' : 'flex-start', backgroundColor: msg.type === 'user' ? '#3b82f6' : '#e0e7ff', padding: 10, borderRadius: 15, borderBottomRightRadius: msg.type === 'user' ? 0 : 15, borderBottomLeftRadius: msg.type === 'bot' ? 0 : 15, maxWidth: '85%', marginBottom: 10 }}>
+                                            <View key={idx} style={{ alignSelf: msg.type === 'user' ? 'flex-end' : 'flex-start', backgroundColor: msg.type === 'user' ? '#4f46e5' : '#e0e7ff', padding: 10, borderRadius: 15, borderBottomRightRadius: msg.type === 'user' ? 0 : 15, borderBottomLeftRadius: msg.type === 'bot' ? 0 : 15, maxWidth: '85%', marginBottom: 10 }}>
                                                 <Text style={{ color: msg.type === 'user' ? 'white' : '#1e3a8a', fontSize: 13, lineHeight: 18 }}>{msg.text}</Text>
                                             </View>
                                         ))
                                     )}
                                     {symptomAnalyzing && (
                                         <View style={{ alignSelf: 'flex-start', backgroundColor: '#e0e7ff', padding: 10, borderRadius: 15, borderBottomLeftRadius: 0, marginBottom: 10 }}>
-                                            <ActivityIndicator size="small" color="#3b82f6" />
+                                            <ActivityIndicator size="small" color="#4f46e5" />
                                         </View>
                                     )}
                                 </ScrollView>
@@ -2199,7 +2203,7 @@ export default function App() {
                                     onSubmitEditing={handleSymptomCheck}
                                 />
                                 <TouchableOpacity 
-                                    style={{ width: 45, height: 45, backgroundColor: '#3b82f6', borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
+                                    style={{ width: 45, height: 45, backgroundColor: '#4f46e5', borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
                                     onPress={handleSymptomCheck}
                                     disabled={symptomAnalyzing || !symptomInput.trim()}
                                 >
@@ -2212,12 +2216,12 @@ export default function App() {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
                             <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1e293b' }}>Health Records</Text>
                             <TouchableOpacity style={{ backgroundColor: '#f1f5f9', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 }}>
-                                <Text style={{ fontSize: 12, color: '#3b82f6', fontWeight: 'bold' }}>+ New Record</Text>
+                                <Text style={{ fontSize: 12, color: '#4f46e5', fontWeight: 'bold' }}>+ New Record</Text>
                             </TouchableOpacity>
                         </View>
 
                         {healthLoading ? (
-                            <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 20 }} />
+                            <ActivityIndicator size="large" color="#4f46e5" style={{ marginTop: 20 }} />
                         ) : healthRecords.length === 0 ? (
                             <View style={{ alignItems: 'center', padding: 30, backgroundColor: 'white', borderRadius: 20, borderWidth: 1, borderColor: '#f1f5f9' }}>
                                 <Ionicons name="document-text-outline" size={50} color="#cbd5e1" style={{ marginBottom: 10 }} />
@@ -2335,6 +2339,7 @@ export default function App() {
                                             <TextInput
                                                 style={styles.feederInputSmall}
                                                 placeholder="08:00"
+                                                placeholderTextColor="#94a3b8"
                                                 value={scheduleTime}
                                                 onChangeText={setScheduleTime}
                                             />
@@ -2344,6 +2349,7 @@ export default function App() {
                                             <TextInput
                                                 style={styles.feederInputSmall}
                                                 placeholder="40"
+                                                placeholderTextColor="#94a3b8"
                                                 keyboardType="numeric"
                                                 value={schedulePortion}
                                                 onChangeText={setSchedulePortion}
@@ -2425,7 +2431,7 @@ export default function App() {
                         </ScrollView>
 
                         {productsLoading ? (
-                            <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+                            <ActivityIndicator size="large" color="#4f46e5" style={{ marginTop: 50 }} />
                         ) : (
                             <View style={styles.marketplaceGrid}>
                                 {products.map((item) => (
@@ -2459,13 +2465,13 @@ export default function App() {
                 ) : activeItem === 'My Orders' ? (
                     <ScrollView
                         style={{ marginTop: 20 }}
-                        refreshControl={<RefreshControl refreshing={ordersLoading} onRefresh={fetchMyOrders} color="#3b82f6" />}
+                        refreshControl={<RefreshControl refreshing={ordersLoading} onRefresh={fetchMyOrders} color="#4f46e5" />}
                     >
                         <Text style={styles.pageTitle}>My Orders</Text>
                         <Text style={styles.pageSubtitle}>Manage and track your recent orders.</Text>
 
                         {ordersLoading && myOrders.length === 0 ? (
-                            <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+                            <ActivityIndicator size="large" color="#4f46e5" style={{ marginTop: 50 }} />
                         ) : (
                             <View style={{ gap: 15, paddingBottom: 100 }}>
                                 {myOrders.map((order) => (
@@ -2537,7 +2543,7 @@ export default function App() {
                                 <Text style={styles.pageSubtitle}>Manage the pets you have listed for adoption.</Text>
 
                                 {isListingsLoading ? (
-                                    <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+                                    <ActivityIndicator size="large" color="#4f46e5" style={{ marginTop: 50 }} />
                                 ) : (
                                     <View style={{ gap: 15, marginTop: 10 }}>
                                         {myRehomingListings.map((listing) => (
@@ -2670,7 +2676,7 @@ export default function App() {
                                             </View>
                                         </View>
                                         <View style={styles.reporterBadge}>
-                                            <Ionicons name="person-circle" size={16} color="#3b82f6" />
+                                            <Ionicons name="person-circle" size={16} color="#4f46e5" />
                                             <Text style={styles.reporterText}>Reported by {report.reporter_name}</Text>
                                         </View>
                                         <View style={styles.locationRow}>
@@ -2754,8 +2760,8 @@ export default function App() {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                             <Text style={[styles.pageTitle, { fontSize: 22, color: '#1e293b' }]}>My Schedule</Text>
                             <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}>
-                                <Ionicons name="add" size={16} color="#3b82f6" />
-                                <Text style={{ fontSize: 13, color: '#3b82f6', fontWeight: 'bold', marginLeft: 4 }}>New Appointment</Text>
+                                <Ionicons name="add" size={16} color="#4f46e5" />
+                                <Text style={{ fontSize: 13, color: '#4f46e5', fontWeight: 'bold', marginLeft: 4 }}>New Appointment</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -2857,7 +2863,7 @@ export default function App() {
                                                 height: 90, 
                                                 borderRadius: 12, 
                                                 borderWidth: 1, 
-                                                borderColor: scheduleData.service_id === cat.id ? '#3b82f6' : '#e2e8f0', 
+                                                borderColor: scheduleData.service_id === cat.id ? '#4f46e5' : '#e2e8f0', 
                                                 backgroundColor: scheduleData.service_id === cat.id ? '#eff6ff' : 'white',
                                                 alignItems: 'center', 
                                                 justifyContent: 'center',
@@ -2868,7 +2874,7 @@ export default function App() {
                                                 setEstimation(cat.price);
                                             }}
                                         >
-                                            <Ionicons name={cat.icon} size={24} color={scheduleData.service_id === cat.id ? '#3b82f6' : '#64748b'} style={{ marginBottom: 8 }} />
+                                            <Ionicons name={cat.icon} size={24} color={scheduleData.service_id === cat.id ? '#4f46e5' : '#64748b'} style={{ marginBottom: 8 }} />
                                             <Text style={{ fontSize: 11, fontWeight: '600', color: scheduleData.service_id === cat.id ? '#1e293b' : '#64748b', textAlign: 'center' }} numberOfLines={2}>
                                                 {cat.title}
                                             </Text>
@@ -3051,7 +3057,7 @@ export default function App() {
                                                 <Text style={styles.modalActionTextWhite}>Apply for Adoption</Text>
                                             </TouchableOpacity>
                                         ) : (
-                                            <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: '#3b82f6', width: '100%' }]}
+                                            <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: '#4f46e5', width: '100%' }]}
                                                 onPress={() => { setIsPetModalVisible(false); setActiveItem('Schedule'); }}>
                                                 <Text style={styles.modalActionTextWhite}>Schedule Vet</Text>
                                             </TouchableOpacity>
@@ -3086,7 +3092,7 @@ export default function App() {
                                 {userPets.map(p => (
                                     <TouchableOpacity 
                                         key={p.id}
-                                        style={[{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0' }, newHealthData.pet_id === p.id && { backgroundColor: '#3b82f6', borderColor: '#3b82f6' }]}
+                                        style={[{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0' }, newHealthData.pet_id === p.id && { backgroundColor: '#4f46e5', borderColor: '#4f46e5' }]}
                                         onPress={() => setNewHealthData({...newHealthData, pet_id: p.id})}
                                     >
                                         <Text style={[{ color: '#64748b', fontSize: 13 }, newHealthData.pet_id === p.id && { color: 'white', fontWeight: 'bold' }]}>{p.pet_name}</Text>
@@ -3099,10 +3105,10 @@ export default function App() {
                                 {['Vaccination', 'Checkup', 'Surgery', 'Deworming'].map(type => (
                                     <TouchableOpacity 
                                         key={type}
-                                        style={[{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center' }, newHealthData.record_type === type && { backgroundColor: '#eff6ff', borderColor: '#3b82f6' }]}
+                                        style={[{ flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center' }, newHealthData.record_type === type && { backgroundColor: '#eff6ff', borderColor: '#4f46e5' }]}
                                         onPress={() => setNewHealthData({...newHealthData, record_type: type})}
                                     >
-                                        <Text style={[{ color: '#64748b', fontSize: 11 }, newHealthData.record_type === type && { color: '#3b82f6', fontWeight: 'bold' }]}>{type}</Text>
+                                        <Text style={[{ color: '#64748b', fontSize: 11 }, newHealthData.record_type === type && { color: '#4f46e5', fontWeight: 'bold' }]}>{type}</Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
@@ -3189,18 +3195,18 @@ export default function App() {
                                         style={[styles.paymentOption, selectedMethod === 'Cards' && styles.paymentOptionActive]}
                                         onPress={() => setSelectedMethod('Cards')}
                                     >
-                                        <Ionicons name="card-outline" size={20} color="#3b82f6" />
+                                        <Ionicons name="card-outline" size={20} color="#4f46e5" />
                                         <Text style={styles.paymentOptionText}>Credit / Debit Card</Text>
-                                        <Ionicons name={selectedMethod === 'Cards' ? "radio-button-on" : "radio-button-off"} size={20} color="#3b82f6" />
+                                        <Ionicons name={selectedMethod === 'Cards' ? "radio-button-on" : "radio-button-off"} size={20} color="#4f46e5" />
                                     </TouchableOpacity>
 
                                     <TouchableOpacity
                                         style={[styles.paymentOption, selectedMethod === 'Netbanking' && styles.paymentOptionActive]}
                                         onPress={() => setSelectedMethod('Netbanking')}
                                     >
-                                        <Ionicons name="business-outline" size={20} color="#3b82f6" />
+                                        <Ionicons name="business-outline" size={20} color="#4f46e5" />
                                         <Text style={styles.paymentOptionText}>Netbanking</Text>
-                                        <Ionicons name={selectedMethod === 'Netbanking' ? "radio-button-on" : "radio-button-off"} size={20} color="#3b82f6" />
+                                        <Ionicons name={selectedMethod === 'Netbanking' ? "radio-button-on" : "radio-button-off"} size={20} color="#4f46e5" />
                                     </TouchableOpacity>
 
                                     {selectedMethod === 'Netbanking' && (
@@ -3211,9 +3217,9 @@ export default function App() {
                                                     <TouchableOpacity
                                                         key={bank}
                                                         onPress={() => setSelectedBank(bank)}
-                                                        style={{ alignItems: 'center', padding: 8, borderWidth: 1, borderColor: selectedBank === bank ? '#3b82f6' : '#e2e8f0', borderRadius: 8, minWidth: 60, backgroundColor: 'white' }}
+                                                        style={{ alignItems: 'center', padding: 8, borderWidth: 1, borderColor: selectedBank === bank ? '#4f46e5' : '#e2e8f0', borderRadius: 8, minWidth: 60, backgroundColor: 'white' }}
                                                     >
-                                                        <Text style={{ fontSize: 10, fontWeight: 'bold', color: selectedBank === bank ? '#3b82f6' : '#64748b' }}>{bank}</Text>
+                                                        <Text style={{ fontSize: 10, fontWeight: 'bold', color: selectedBank === bank ? '#4f46e5' : '#64748b' }}>{bank}</Text>
                                                     </TouchableOpacity>
                                                 ))}
                                             </View>
@@ -3224,9 +3230,9 @@ export default function App() {
                                         style={[styles.paymentOption, selectedMethod === 'Wallet' && styles.paymentOptionActive]}
                                         onPress={() => setSelectedMethod('Wallet')}
                                     >
-                                        <Ionicons name="phone-portrait-outline" size={20} color="#3b82f6" />
+                                        <Ionicons name="phone-portrait-outline" size={20} color="#4f46e5" />
                                         <Text style={styles.paymentOptionText}>UPI / Google Pay</Text>
-                                        <Ionicons name={selectedMethod === 'Wallet' ? "radio-button-on" : "radio-button-off"} size={20} color="#3b82f6" />
+                                        <Ionicons name={selectedMethod === 'Wallet' ? "radio-button-on" : "radio-button-off"} size={20} color="#4f46e5" />
                                     </TouchableOpacity>
                                 </View>
 
@@ -3317,7 +3323,7 @@ export default function App() {
             <Modal animationType="slide" transparent={false} visible={isAddPetModalVisible} onRequestClose={() => setIsAddPetModalVisible(false)}>
                 <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
                     <View style={{ flex: 1, padding: 0, overflow: 'hidden', width: '100%' }}>
-                        <LinearGradient colors={['#3b82f6', '#2563eb']} style={{ padding: 25, paddingTop: Platform.OS === 'ios' ? 60 : 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <LinearGradient colors={['#4f46e5', '#2563eb']} style={{ padding: 25, paddingTop: Platform.OS === 'ios' ? 60 : 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                             <View>
                                 <Text style={{ color: 'white', fontSize: 24, fontWeight: '800' }}>Add New Pet</Text>
                                 <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 2 }}>Grow your pet family</Text>
@@ -3388,10 +3394,10 @@ export default function App() {
                                         onPress={() => setNewPetData({ ...newPetData, type: t })}
                                         style={[
                                             { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#e2e8f0', backgroundColor: '#f8fafc' },
-                                            newPetData.type === t && { borderColor: '#3b82f6', backgroundColor: '#eff6ff' }
+                                            newPetData.type === t && { borderColor: '#4f46e5', backgroundColor: '#eff6ff' }
                                         ]}
                                     >
-                                        <Text style={[{ fontSize: 13, fontWeight: '600', color: '#64748b' }, newPetData.type === t && { color: '#3b82f6' }]}>{t}</Text>
+                                        <Text style={[{ fontSize: 13, fontWeight: '600', color: '#64748b' }, newPetData.type === t && { color: '#4f46e5' }]}>{t}</Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
@@ -3413,11 +3419,11 @@ export default function App() {
                                                 key={g} 
                                                 style={[
                                                     { flex: 1, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center', backgroundColor: '#f8fafc' }, 
-                                                    newPetData.gender === g && { borderColor: '#3b82f6', backgroundColor: '#eff6ff' }
+                                                    newPetData.gender === g && { borderColor: '#4f46e5', backgroundColor: '#eff6ff' }
                                                 ]} 
                                                 onPress={() => setNewPetData({ ...newPetData, gender: g })}
                                             >
-                                                <Text style={[{ fontSize: 13, fontWeight: '600', color: '#64748b' }, newPetData.gender === g && { color: '#3b82f6' }]}>{g}</Text>
+                                                <Text style={[{ fontSize: 13, fontWeight: '600', color: '#64748b' }, newPetData.gender === g && { color: '#4f46e5' }]}>{g}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </View>
@@ -3427,6 +3433,7 @@ export default function App() {
                                     <TextInput 
                                         style={styles.formInput} 
                                         placeholder="e.g. 2 Years" 
+                                        placeholderTextColor="#94a3b8"
                                         value={newPetData.age} 
                                         onChangeText={(text) => setNewPetData({ ...newPetData, age: text })} 
                                     />
@@ -3437,6 +3444,7 @@ export default function App() {
                             <TextInput 
                                 style={styles.formInput} 
                                 placeholder="e.g. 5 kg" 
+                                placeholderTextColor="#94a3b8"
                                 value={newPetData.weight} 
                                 onChangeText={(text) => setNewPetData({ ...newPetData, weight: text })} 
                             />
@@ -3445,6 +3453,7 @@ export default function App() {
                             <TextInput 
                                 style={[styles.formInput, { height: 100, textAlignVertical: 'top' }]} 
                                 placeholder="Tell us about your pet..." 
+                                placeholderTextColor="#94a3b8"
                                 multiline 
                                 value={newPetData.description} 
                                 onChangeText={(text) => setNewPetData({ ...newPetData, description: text })} 
@@ -3461,7 +3470,7 @@ export default function App() {
                                     <ActivityIndicator color="white" />
                                 ) : (
                                     <LinearGradient
-                                        colors={['#3b82f6', '#2563eb']}
+                                        colors={['#4f46e5', '#2563eb']}
                                         start={{ x: 0, y: 0 }}
                                         end={{ x: 1, y: 1 }}
                                         style={styles.premiumBtnGradient}
@@ -3482,7 +3491,7 @@ export default function App() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 20,
@@ -3524,21 +3533,24 @@ const styles = StyleSheet.create({
     input: {
         width: '100%',
         height: 50,
-        backgroundColor: '#f1f5f9',
+        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: '#cbd5e1',
         borderRadius: 12,
         paddingHorizontal: 15,
         marginBottom: 15,
         fontSize: 16,
+        color: '#1e293b',
     },
     button: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         width: '100%',
         height: 50,
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 10,
-        shadowColor: '#3b82f6',
+        shadowColor: '#4f46e5',
         shadowOpacity: 0.4,
         shadowOffset: { width: 0, height: 4 },
         elevation: 4,
@@ -3549,28 +3561,28 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     premiumBtn: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         width: '100%',
         height: 56,
         borderRadius: 16,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#3b82f6',
+        shadowColor: '#4f46e5',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 6,
     },
     premiumBtnSmall: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderRadius: 12,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#3b82f6',
+        shadowColor: '#4f46e5',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 4,
@@ -3670,7 +3682,7 @@ const styles = StyleSheet.create({
         color: '#1e293b',
     },
     linkText: {
-        color: '#3b82f6',
+        color: '#4f46e5',
         fontWeight: '600',
     },
     petsScroll: {
@@ -3941,7 +3953,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 10,
     },
     sidebarItemActive: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         borderRadius: 12,
     },
     sidebarText: {
@@ -4086,7 +4098,7 @@ const styles = StyleSheet.create({
 
     // New Screen Styles
     addBtnSmall: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 12,
@@ -4128,7 +4140,7 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start',
     },
     manageBtnText: {
-        color: '#3b82f6',
+        color: '#4f46e5',
         fontWeight: 'bold',
         fontSize: 12,
     },
@@ -4196,8 +4208,8 @@ const styles = StyleSheet.create({
         borderColor: '#e2e8f0',
     },
     portionBtnActive: {
-        backgroundColor: '#3b82f6',
-        borderColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
+        borderColor: '#4f46e5',
     },
     portionBtnText: {
         color: '#64748b',
@@ -4207,7 +4219,7 @@ const styles = StyleSheet.create({
         color: 'white',
     },
     feedNowBtn: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         flexDirection: 'row',
         alignItems: 'center',
         width: '100%',
@@ -4256,7 +4268,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     buyBtn: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         paddingVertical: 8,
         borderRadius: 8,
         alignItems: 'center',
@@ -4414,7 +4426,7 @@ const styles = StyleSheet.create({
     },
     petTypeBadge: {
         backgroundColor: '#eff6ff',
-        color: '#3b82f6',
+        color: '#4f46e5',
         paddingHorizontal: 12,
         paddingVertical: 4,
         borderRadius: 12,
@@ -4504,12 +4516,12 @@ const styles = StyleSheet.create({
     formInput: {
         width: '100%',
         height: 50,
-        backgroundColor: '#f8fafc',
+        backgroundColor: '#ffffff',
         borderRadius: 12,
         paddingHorizontal: 15,
         marginBottom: 15,
         borderWidth: 1,
-        borderColor: '#e2e8f0',
+        borderColor: '#cbd5e1',
         fontSize: 14,
         color: '#1e293b',
     },
@@ -4524,8 +4536,8 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     formSelectBtnActive: {
-        backgroundColor: '#3b82f6',
-        borderColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
+        borderColor: '#4f46e5',
     },
     formSelectText: {
         color: '#64748b',
@@ -4542,7 +4554,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     addBtnRehome: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 8,
@@ -4619,7 +4631,7 @@ const styles = StyleSheet.create({
         marginTop: 5,
     },
     viewProfileBtnText: {
-        color: '#3b82f6',
+        color: '#4f46e5',
         fontWeight: 'bold',
         fontSize: 14,
         marginRight: 4,
@@ -4670,7 +4682,7 @@ const styles = StyleSheet.create({
     statusBadgeTextSmall_Adopted: { color: '#1e40af' },
     statusBadgeTextSmall_Rejected: { color: '#991b1b' },
     linkText: {
-        color: '#3b82f6',
+        color: '#4f46e5',
         fontWeight: 'bold',
         fontSize: 14,
     },
@@ -4819,13 +4831,14 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     feederInputSmall: {
-        backgroundColor: '#f8fafc',
+        backgroundColor: '#ffffff',
         borderWidth: 1,
-        borderColor: '#e2e8f0',
+        borderColor: '#cbd5e1',
         borderRadius: 10,
         paddingHorizontal: 12,
         paddingVertical: 10,
         fontSize: 14,
+        color: '#1e293b',
     },
     btnSaveSchedFeeder: {
         backgroundColor: '#1e293b',
@@ -4913,7 +4926,7 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         borderColor: '#e2e8f0',
         elevation: 2,
-        shadowColor: '#3b82f6',
+        shadowColor: '#4f46e5',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -4969,7 +4982,7 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
     },
     categoryCardScheduleActive: {
-        borderColor: '#3b82f6',
+        borderColor: '#4f46e5',
         backgroundColor: '#ffffff',
         borderWidth: 2,
     },
@@ -4994,7 +5007,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 2
     },
     categoryTitleScheduleActive: {
-        color: '#3b82f6',
+        color: '#4f46e5',
         fontWeight: '700'
     },
     serviceHorizontalScroll: {
@@ -5018,7 +5031,7 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
     },
     serviceCardSmallActive: {
-        borderColor: '#3b82f6',
+        borderColor: '#4f46e5',
         backgroundColor: '#eff6ff',
     },
     serviceNameSmall: {
@@ -5059,7 +5072,7 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
     },
     clinicCardWideActive: {
-        borderColor: '#3b82f6',
+        borderColor: '#4f46e5',
         backgroundColor: '#eff6ff',
         borderWidth: 2,
     },
@@ -5109,7 +5122,7 @@ const styles = StyleSheet.create({
         color: '#1e293b',
     },
     slotBtnTextActive: {
-        color: '#3b82f6',
+        color: '#4f46e5',
     },
     clinicAlertBadge: {
         flexDirection: 'row',
@@ -5151,7 +5164,7 @@ const styles = StyleSheet.create({
         marginLeft: 10,
     },
     slotBtnTextActive: {
-        color: '#3b82f6',
+        color: '#4f46e5',
     },
     clinicAlertBadge: {
         backgroundColor: '#eff6ff',
@@ -5164,7 +5177,7 @@ const styles = StyleSheet.create({
     },
     clinicAlertText: {
         fontSize: 12,
-        color: '#3b82f6',
+        color: '#4f46e5',
         fontWeight: '700',
     },
     scheduleFooterFull: {
@@ -5193,7 +5206,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     serviceCardSmallActive: {
-        borderColor: '#3b82f6',
+        borderColor: '#4f46e5',
         backgroundColor: '#eff6ff',
     },
     serviceNameSmall: {
@@ -5284,7 +5297,7 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     backLinkText: {
-        color: '#3b82f6',
+        color: '#4f46e5',
         fontSize: 13,
         fontWeight: '600',
     },
@@ -5299,7 +5312,7 @@ const styles = StyleSheet.create({
         borderColor: '#e2e8f0',
     },
     subServiceCardActive: {
-        borderColor: '#3b82f6',
+        borderColor: '#4f46e5',
         backgroundColor: '#eff6ff',
     },
     subServiceName: {
@@ -5314,7 +5327,7 @@ const styles = StyleSheet.create({
     },
     subServiceDuration: {
         fontSize: 12,
-        color: '#3b82f6',
+        color: '#4f46e5',
         fontWeight: 'bold',
     },
     clinicCard: {
@@ -5328,7 +5341,7 @@ const styles = StyleSheet.create({
         borderColor: '#e2e8f0',
     },
     clinicCardActive: {
-        borderColor: '#3b82f6',
+        borderColor: '#4f46e5',
         borderWidth: 2,
         backgroundColor: 'white',
     },
@@ -5386,8 +5399,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
     },
     slotBoxSelected: {
-        backgroundColor: '#3b82f6',
-        borderColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
+        borderColor: '#4f46e5',
     },
     slotBoxDisabled: {
         backgroundColor: '#f1f5f9',
@@ -5509,7 +5522,7 @@ const styles = StyleSheet.create({
         color: '#1e293b',
     },
     payNowBtn: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         paddingVertical: 16,
         borderRadius: 14,
         alignItems: 'center',
@@ -5565,7 +5578,7 @@ const styles = StyleSheet.create({
     },
     marketplaceGoBtn: {
         marginTop: 20,
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         paddingHorizontal: 25,
         paddingVertical: 12,
         borderRadius: 12,
@@ -5655,7 +5668,7 @@ const styles = StyleSheet.create({
         height: 50,
         marginBottom: 20,
         borderWidth: 1,
-        borderColor: '#e2e8f0',
+        borderColor: '#cbd5e1',
     },
     searchInputMarket: {
         flex: 1,
@@ -5808,7 +5821,7 @@ const styles = StyleSheet.create({
     cartItemPrice: {
         fontSize: 13,
         fontWeight: '700',
-        color: '#3b82f6',
+        color: '#4f46e5',
     },
     cartItemQty: {
         fontSize: 11,
@@ -6086,9 +6099,10 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 55,
         borderWidth: 1,
-        borderColor: '#e2e8f0',
+        borderColor: '#cbd5e1',
         borderRadius: 12,
         overflow: 'hidden',
+        backgroundColor: 'white',
     },
     flagBox: {
         flexDirection: 'row',
@@ -6096,7 +6110,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         backgroundColor: '#f8fafc',
         borderRightWidth: 1,
-        borderRightColor: '#e2e8f0',
+        borderRightColor: '#cbd5e1',
         gap: 5,
     },
     razorpayPhoneInput: {
@@ -6414,7 +6428,7 @@ const styles = StyleSheet.create({
         fontStyle: 'italic',
     },
     safeBtn: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -6467,7 +6481,7 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     emptyBtnPrimary: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         paddingVertical: 12,
         paddingHorizontal: 20,
         borderRadius: 12,
@@ -6521,7 +6535,7 @@ const styles = StyleSheet.create({
     bankLogoPlaceholder: {
         width: 100,
         height: 100,
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         borderRadius: 50,
         alignItems: 'center',
         justifyContent: 'center',
