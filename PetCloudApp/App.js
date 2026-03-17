@@ -1145,6 +1145,7 @@ export default function App() {
                         <TextInput
                             style={styles.input}
                             placeholder="Full Name"
+                            placeholderTextColor="#94a3b8"
                             value={fullName}
                             onChangeText={setFullName}
                         />
