@@ -498,6 +498,8 @@ if ($selectedPetId) {
             backdrop-filter: blur(4px);
             align-items: center;
             justify-content: center;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .modal-content {
