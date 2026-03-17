@@ -1041,6 +1041,12 @@ export default function App() {
         }
     }, [checkoutStep, isCheckoutVisible]);
 
+    useEffect(() => {
+        if (activeItem === 'Profile' && user) {
+            fetchProfile();
+        }
+    }, [activeItem]);
+
     // Rehoming Form State
     const [rehomingData, setRehomingData] = useState({
         pet_name: '',
@@ -1796,23 +1802,22 @@ export default function App() {
                                 <Text style={styles.formLabel}>Full Name</Text>
                                 <TextInput
                                     style={styles.formInput}
-                                    value={profileData.full_name}
-                                    onChangeText={(text) => setProfileData({ ...profileData, full_name: text })}
                                     placeholder="Enter full name"
+                                    value={profileData.full_name || (user ? user.full_name : '')}
+                                    onChangeText={(text) => setProfileData({ ...profileData, full_name: text })}
                                 />
-
 
                                 <Text style={styles.formLabel}>Location</Text>
                                 <TextInput
                                     style={styles.formInput}
-                                    value={profileData.location}
-                                    onChangeText={(text) => setProfileData({ ...profileData, location: text })}
                                     placeholder="City, State"
+                                    value={profileData.location || (user ? user.location : '')}
+                                    onChangeText={(text) => setProfileData({ ...profileData, location: text })}
                                 />
 
                                 <Text style={styles.formLabel}>Bio</Text>
                                 <TextInput
-                                    style={[styles.formInput, { height: 80, textAlignVertical: 'top' }]}
+                                    style={[styles.formInput, { height: 100, textAlignVertical: 'top' }]}
                                     value={profileData.bio}
                                     onChangeText={(text) => setProfileData({ ...profileData, bio: text })}
                                     placeholder="Tell us about yourself..."
@@ -1820,11 +1825,18 @@ export default function App() {
                                 />
 
                                 <TouchableOpacity 
-                                    style={[styles.payBtn, profileSaving && { opacity: 0.7 }, { marginTop: 10 }]} 
+                                    style={[styles.premiumBtn, profileSaving && { opacity: 0.7 }, { marginTop: 20 }]} 
                                     onPress={handleUpdateProfile}
                                     disabled={profileSaving}
                                 >
-                                    {profileSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.payBtnText}>Save Changes</Text>}
+                                    {profileSaving ? (
+                                        <ActivityIndicator color="#fff" />
+                                    ) : (
+                                        <>
+                                            <Ionicons name="checkmark-circle-outline" size={20} color="white" style={{ marginRight: 8 }} />
+                                            <Text style={styles.premiumBtnText}>Save Changes</Text>
+                                        </>
+                                    )}
                                 </TouchableOpacity>
                             </View>
                 ) : activeItem === 'Adoption' ? (
@@ -2405,15 +2417,15 @@ export default function App() {
                     </ScrollView>
                 ) : activeItem === 'Pet Rehoming' ? (
                     <View style={{ marginTop: 20, paddingHorizontal: 15 }}>
-                        <View style={styles.sectionHeader}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
                             <Text style={[styles.pageTitle, { fontSize: 20, marginBottom: 0 }]}>{rehomingView === 'list' ? 'My Rehoming Listings' : 'List a Pet'}</Text>
                             {rehomingView === 'list' ? (
-                                <TouchableOpacity style={styles.addBtnRehome} onPress={() => setRehomingView('form')}>
-                                    <Ionicons name="add" size={16} color="white" />
-                                    <Text style={styles.addBtnTextRehome}>Rehome Pet</Text>
+                                <TouchableOpacity style={styles.premiumBtnSmall} onPress={() => setRehomingView('form')}>
+                                    <Ionicons name="add" size={18} color="white" style={{ marginRight: 4 }} />
+                                    <Text style={styles.premiumBtnTextSmall}>Rehome Pet</Text>
                                 </TouchableOpacity>
                             ) : (
-                                <TouchableOpacity onPress={() => setRehomingView('list')}>
+                                <TouchableOpacity onPress={() => setRehomingView('list')} style={{ paddingVertical: 8 }}>
                                     <Text style={styles.linkText}>Back to List</Text>
                                 </TouchableOpacity>
                             )}
@@ -3238,35 +3250,78 @@ export default function App() {
             </Modal>
 
             {/* Add Pet Modal */}
-            <Modal animationType="slide" transparent={true} visible={isAddPetModalVisible} onRequestClose={() => setIsAddPetModalVisible(false)}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Add New Pet</Text>
-                            <TouchableOpacity onPress={() => setIsAddPetModalVisible(false)}><Ionicons name="close" size={24} color="#64748b" /></TouchableOpacity>
-                        </View>
-                        <ScrollView style={{ maxHeight: 500 }}>
+            <Modal animationType="fade" transparent={true} visible={isAddPetModalVisible} onRequestClose={() => setIsAddPetModalVisible(false)}>
+                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(15, 23, 42, 0.7)' }]}>
+                    <View style={[styles.modalContent, { padding: 0, overflow: 'hidden', borderRadius: 28, width: '92%' }]}>
+                        <LinearGradient colors={['#3b82f6', '#2563eb']} style={{ padding: 25, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <View>
+                                <Text style={{ color: 'white', fontSize: 24, fontWeight: '800' }}>Add New Pet</Text>
+                                <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 2 }}>Grow your pet family</Text>
+                            </View>
+                            <TouchableOpacity 
+                                onPress={() => setIsAddPetModalVisible(false)}
+                                style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: 8, borderRadius: 12 }}
+                            >
+                                <Ionicons name="close" size={20} color="white" />
+                            </TouchableOpacity>
+                        </LinearGradient>
+
+                        <ScrollView style={{ padding: 25, maxHeight: 600 }}>
                             <Text style={styles.formLabel}>Pet Name *</Text>
-                            <TextInput style={styles.formInput} placeholder="e.g. Bella" value={newPetData.name} onChangeText={(text) => setNewPetData({ ...newPetData, name: text })} />
+                            <TextInput 
+                                style={styles.formInput} 
+                                placeholder="e.g. Bella" 
+                                value={newPetData.name} 
+                                onChangeText={(text) => setNewPetData({ ...newPetData, name: text })} 
+                            />
+                            
                             <Text style={styles.formLabel}>Breed</Text>
-                            <TextInput style={styles.formInput} placeholder="e.g. Golden Retriever" value={newPetData.breed} onChangeText={(text) => setNewPetData({ ...newPetData, breed: text })} />
+                            <TextInput 
+                                style={styles.formInput} 
+                                placeholder="e.g. Golden Retriever" 
+                                value={newPetData.breed} 
+                                onChangeText={(text) => setNewPetData({ ...newPetData, breed: text })} 
+                            />
+                            
                             <Text style={styles.formLabel}>Gender</Text>
-                            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 15 }}>
+                            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
                                 {['Male', 'Female'].map(g => (
-                                    <TouchableOpacity key={g} style={[styles.genderBtn, newPetData.gender === g && styles.genderBtnActive]} onPress={() => setNewPetData({ ...newPetData, gender: g })}>
-                                        <Text style={[styles.genderBtnText, newPetData.gender === g && styles.genderBtnTextActive]}>{g}</Text>
+                                    <TouchableOpacity 
+                                        key={g} 
+                                        style={[
+                                            { flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center', backgroundColor: '#f8fafc' }, 
+                                            newPetData.gender === g && { borderColor: '#3b82f6', backgroundColor: '#eff6ff' }
+                                        ]} 
+                                        onPress={() => setNewPetData({ ...newPetData, gender: g })}
+                                    >
+                                        <Text style={[{ fontSize: 14, fontWeight: '600', color: '#64748b' }, newPetData.gender === g && { color: '#3b82f6' }]}>{g}</Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
+
                             <Text style={styles.formLabel}>Age</Text>
-                            <TextInput style={styles.formInput} placeholder="e.g. 2 Years" value={newPetData.age} onChangeText={(text) => setNewPetData({ ...newPetData, age: text })} />
+                            <TextInput 
+                                style={styles.formInput} 
+                                placeholder="e.g. 2 Years" 
+                                value={newPetData.age} 
+                                onChangeText={(text) => setNewPetData({ ...newPetData, age: text })} 
+                            />
+
+                            <View style={{ height: 10 }} />
 
                             <TouchableOpacity
-                                style={[styles.button, isProcessing && { opacity: 0.7 }]}
+                                style={[styles.premiumBtn, isProcessing && { opacity: 0.7 }, { marginBottom: 30 }]}
                                 onPress={handleAddPet}
                                 disabled={isProcessing}
                             >
-                                {isProcessing ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Add to Family</Text>}
+                                {isProcessing ? (
+                                    <ActivityIndicator color="white" />
+                                ) : (
+                                    <>
+                                        <Ionicons name="add-circle-outline" size={22} color="white" style={{ marginRight: 8 }} />
+                                        <Text style={styles.premiumBtnText}>Add to Family</Text>
+                                    </>
+                                )}
                             </TouchableOpacity>
                         </ScrollView>
                     </View>
@@ -3344,6 +3399,45 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    premiumBtn: {
+        backgroundColor: '#3b82f6',
+        width: '100%',
+        height: 56,
+        borderRadius: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#3b82f6',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    premiumBtnSmall: {
+        backgroundColor: '#3b82f6',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#3b82f6',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    premiumBtnText: {
+        color: 'white',
+        fontWeight: '800',
+        fontSize: 16,
+        letterSpacing: 0.5,
+    },
+    premiumBtnTextSmall: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 14,
     },
 
     // Dashboard Styles

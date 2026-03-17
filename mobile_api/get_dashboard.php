@@ -127,7 +127,8 @@ try {
     // 11. My Orders (Recent)
     $stmt = $pdo->prepare("
         SELECT o.id, o.user_id, o.payment_id, o.total_amount, o.shipping_address, o.city, o.zip_code, o.status, o.created_at AS order_date, o.payment_method,
-               (SELECT p.image_url FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = o.id LIMIT 1) as product_image
+               (SELECT p.image_url FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = o.id LIMIT 1) as product_image,
+               (SELECT p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = o.id LIMIT 1) as product_name
         FROM orders o
         WHERE o.user_id = ? 
         ORDER BY o.created_at DESC 
@@ -135,6 +136,23 @@ try {
     ");
     $stmt->execute([$user_id]);
     $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Filter to ensure working images for demo
+    $workingImages = [
+        'Bird Seed Mix' => 'images/bird_feed.webp',
+        'Chew Bone' => 'images/chew_bone.jpg',
+        'Pet Vitamin Supplements' => 'images/Pet Vitamin Supplements.webp',
+        'Comfort Pet Bed' => 'images/Comfort Pet Bed.webp',
+        'Interactive Cat Toy' => 'images/cat_toy.jpg',
+        'Premium Dog Food' => 'images/premium_dog_food.webp',
+        'Puppy Food' => 'images/puppy_food.avif'
+    ];
+
+    foreach ($orders as &$o) {
+        if (isset($o['product_name']) && isset($workingImages[$o['product_name']])) {
+            $o['product_image'] = $workingImages[$o['product_name']];
+        }
+    }
 
     echo json_encode([
         'success' => true,
