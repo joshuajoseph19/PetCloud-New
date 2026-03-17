@@ -1923,27 +1923,7 @@ export default function App() {
                                 ) : (
                                     <View style={styles.listingsGrid}>
                                         {adoptionListings.map((pet) => (
-                                            <TouchableOpacity 
-                                                key={pet.id} 
-                                                style={styles.adoptionCard}
-                                                onPress={() => {
-                                                    const mappedPet = {
-                                                        ...pet,
-                                                        pet_name: pet.pet_name,
-                                                        pet_image: pet.image,
-                                                        pet_type: pet.pet_type?.name,
-                                                        pet_breed: pet.breed?.name,
-                                                        pet_age: pet.age?.display || "N/A",
-                                                        pet_description: pet.description || "No description available.",
-                                                        pet_weight: pet.weight_kg ? pet.weight_kg + " kg" : "N/A",
-                                                        pet_gender: pet.gender || "Unknown",
-                                                        is_adoption: true,
-                                                        listing_id: pet.id
-                                                    };
-                                                    setSelectedPet(mappedPet);
-                                                    setIsPetModalVisible(true);
-                                                }}
-                                            >
+                                            <View key={pet.id} style={styles.adoptionCard}>
                                                 <Image source={{ uri: getImageUrl(pet.image) }} style={styles.adoptionImage} />
                                                 <View style={styles.adoptionInfo}>
                                                     <View style={styles.adoptionHeaderRow}>
@@ -1954,15 +1934,35 @@ export default function App() {
                                                             </Text>
                                                         </View>
                                                     </View>
-                                                    <Text style={styles.adoptionDetails}>
-                                                        {pet.age?.display || 'N/A'} • {pet.breed?.name || 'Unknown'}
-                                                    </Text>
-                                                    <View style={styles.viewProfileBtnRow}>
-                                                        <Text style={styles.viewProfileBtnText}>View Details</Text>
-                                                        <Ionicons name="chevron-forward" size={16} color="#3b82f6" />
+                                                    <View style={styles.adoptionDetailsRow}>
+                                                        <Text style={styles.adoptionDetails}>
+                                                            {pet.age?.display || 'N/A'} • {pet.breed?.name || 'Unknown'}
+                                                        </Text>
                                                     </View>
+                                                    <TouchableOpacity 
+                                                        style={styles.greenProfileBtn}
+                                                        onPress={() => {
+                                                            const mappedPet = {
+                                                                ...pet,
+                                                                pet_name: pet.pet_name,
+                                                                pet_image: pet.image,
+                                                                pet_type: pet.pet_type?.name,
+                                                                pet_breed: pet.breed?.name,
+                                                                pet_age: pet.age?.display || "N/A",
+                                                                pet_description: pet.description || "No description available.",
+                                                                pet_weight: pet.weight_kg ? pet.weight_kg + " kg" : "N/A",
+                                                                pet_gender: pet.gender || "Unknown",
+                                                                is_adoption: true,
+                                                                listing_id: pet.id
+                                                            };
+                                                            setSelectedPet(mappedPet);
+                                                            setIsPetModalVisible(true);
+                                                        }}
+                                                    >
+                                                        <Text style={styles.greenProfileBtnText}>View Profile</Text>
+                                                    </TouchableOpacity>
                                                 </View>
-                                            </TouchableOpacity>
+                                            </View>
                                         ))}
                                         {adoptionListings.length === 0 && (
                                             <View style={styles.emptyStateContainer}>
@@ -4019,8 +4019,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     filterTabActive: {
-        backgroundColor: 'black', // Black for active filter to match web
-        borderColor: 'black',
+        backgroundColor: 'white',
+        borderColor: '#111827',
+        borderWidth: 2, // Thicker border for active state
     },
     filterText: {
         fontSize: 13,
@@ -4028,7 +4029,8 @@ const styles = StyleSheet.create({
         color: '#64748b',
     },
     filterTextActive: {
-        color: 'white',
+        color: '#111827',
+        fontWeight: '700',
     },
     adoptionSearchContainer: {
         flexDirection: 'row',
@@ -4056,20 +4058,22 @@ const styles = StyleSheet.create({
     },
     adoptionCard: {
         backgroundColor: 'white',
-        borderRadius: 20,
+        borderRadius: 24,
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: '#f1f5f9',
         shadowColor: '#000',
         shadowOpacity: 0.05,
         shadowOffset: { width: 0, height: 4 },
-        shadowRadius: 10,
-        elevation: 3,
+        shadowRadius: 15,
+        elevation: 4,
+        marginBottom: 20,
+        marginHorizontal: 15,
     },
     adoptionImage: {
         width: '100%',
-        height: 250,
-        backgroundColor: '#e2e8f0',
+        height: 230,
+        backgroundColor: '#f8fafc',
     },
     adoptionInfo: {
         padding: 20,
@@ -4077,39 +4081,43 @@ const styles = StyleSheet.create({
     adoptionHeaderRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 5,
+        alignItems: 'center',
+        marginBottom: 10,
     },
     adoptionName: {
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: 'bold',
-        color: '#1e293b',
+        color: '#111827',
+        fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
     },
     typeTag: {
-        backgroundColor: '#eff6ff',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
+        backgroundColor: '#dbeafe',
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        borderRadius: 12,
     },
     typeTagText: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '700',
-        color: '#3b82f6',
+        color: '#1e40af',
     },
-    adoptionDetails: {
-        fontSize: 14,
-        color: '#64748b',
+    adoptionDetailsRow: {
         marginBottom: 20,
     },
-    viewProfileBtn: {
-        backgroundColor: '#10b981', // Green button
-        paddingVertical: 12,
+    adoptionDetails: {
+        fontSize: 15,
+        color: '#6b7280',
+    },
+    greenProfileBtn: {
+        backgroundColor: '#10b981',
+        paddingVertical: 14,
         borderRadius: 12,
         alignItems: 'center',
+        justifyContent: 'center',
     },
-    viewProfileText: {
+    greenProfileBtnText: {
         color: 'white',
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: '700',
     },
 
