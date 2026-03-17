@@ -3351,10 +3351,10 @@ export default function App() {
             </Modal>
 
             {/* Add Pet Modal */}
-            <Modal animationType="fade" transparent={true} visible={isAddPetModalVisible} onRequestClose={() => setIsAddPetModalVisible(false)}>
-                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(15, 23, 42, 0.7)' }]}>
-                    <View style={[styles.modalContent, { padding: 0, overflow: 'hidden', borderRadius: 28, width: '92%' }]}>
-                        <LinearGradient colors={['#3b82f6', '#2563eb']} style={{ padding: 25, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Modal animationType="slide" transparent={false} visible={isAddPetModalVisible} onRequestClose={() => setIsAddPetModalVisible(false)}>
+                <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+                    <View style={{ flex: 1, padding: 0, overflow: 'hidden', width: '100%' }}>
+                        <LinearGradient colors={['#3b82f6', '#2563eb']} style={{ padding: 25, paddingTop: Platform.OS === 'ios' ? 60 : 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                             <View>
                                 <Text style={{ color: 'white', fontSize: 24, fontWeight: '800' }}>Add New Pet</Text>
                                 <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 2 }}>Grow your pet family</Text>
@@ -3367,7 +3367,7 @@ export default function App() {
                             </TouchableOpacity>
                         </LinearGradient>
 
-                        <ScrollView style={{ padding: 25, maxHeight: 600 }}>
+                        <ScrollView style={{ padding: 25, flex: 1, marginBottom: 20 }}>
                             {/* Image Picker */}
                             <TouchableOpacity 
                                 style={{ 
@@ -3388,7 +3388,7 @@ export default function App() {
                                     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
                                     if (status !== 'granted') return;
                                     let result = await ImagePicker.launchImageLibraryAsync({
-                                        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                                        mediaTypes: ['images'],
                                         allowsEditing: true,
                                         aspect: [1, 1],
                                         quality: 0.5,
