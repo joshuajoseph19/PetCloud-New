@@ -2247,7 +2247,7 @@ export default function App() {
                         <Text style={styles.pageTitle}>Smart Feeder</Text>
 
                         {feederLoading ? (
-                            <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+                            <ActivityIndicator size="large" color="#4f46e5" style={{ marginTop: 50 }} />
                         ) : (
                             <View style={{ gap: 20 }}>
                                 {/* Feeder Terminal Card */}
@@ -2266,11 +2266,11 @@ export default function App() {
                                     {/* Last Fed Status Row */}
                                     <View style={styles.feederStatusRow}>
                                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                                            <Ionicons name="time" size={16} color="#3b82f6" />
+                                            <Ionicons name="time" size={16} color="#4f46e5" />
                                             <Text style={styles.feederStatusText}>Last fed: {feederData.last_feed?.time || '--'}</Text>
                                         </View>
                                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                                            <Ionicons name="restaurant" size={16} color="#3b82f6" />
+                                            <Ionicons name="restaurant" size={16} color="#4f46e5" />
                                             <Text style={styles.feederStatusText}>Last portion: {feederData.last_feed?.portion || '--'}</Text>
                                         </View>
                                     </View>
@@ -2326,7 +2326,7 @@ export default function App() {
                                 {/* Simple Schedule Card */}
                                 <View style={styles.minimalCard}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 15 }}>
-                                        <Ionicons name="calendar-outline" size={20} color="#3b82f6" />
+                                        <Ionicons name="calendar-outline" size={20} color="#4f46e5" />
                                         <Text style={styles.feederCardTitle}>Simple Schedule</Text>
                                     </View>
                                     <View style={{ flexDirection: 'row', gap: 10, marginBottom: 15 }}>
@@ -2814,15 +2814,15 @@ export default function App() {
 
                         {/* Schedule New Appointment Form */}
                         <View style={{ backgroundColor: 'white', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 40, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 25 }}>
-                                <View>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 }}>
+                                <View style={{ flex: 1 }}>
                                     <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1e293b', marginBottom: 4 }}>Schedule New Appointment</Text>
                                     <Text style={{ fontSize: 13, color: '#64748b' }}>Find the best care for your furry friend</Text>
                                 </View>
-                                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#10b981' }} />
-                                    <Text style={{ fontSize: 12, color: '#64748b', fontWeight: '500' }}>Step 1: Details</Text>
-                                </TouchableOpacity>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0fdf4', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, marginLeft: 10 }}>
+                                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#10b981', marginRight: 6 }} />
+                                    <Text style={{ fontSize: 12, color: '#166534', fontWeight: 'bold' }}>Step 1: Details</Text>
+                                </View>
                             </View>
 
                             <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#94a3b8', letterSpacing: 1, marginBottom: 15 }}><Ionicons name="paw" size={12} /> PET DETAILS</Text>
@@ -2877,17 +2877,17 @@ export default function App() {
                                 </View>
                             </ScrollView>
 
-                            <View style={{ borderTopWidth: 1, borderTopColor: '#f1f5f9', borderStyle: 'dashed', paddingTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <View>
-                                    <Text style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5 }}>Total estimation</Text>
-                                    <Text style={{ fontSize: 20, fontWeight: '800', color: '#1e293b' }}>₹{estimation}</Text>
+                            <View style={{ borderTopWidth: 1, borderTopColor: '#f1f5f9', borderStyle: 'dashed', paddingTop: 20, flexDirection: 'column', gap: 15 }}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Text style={{ fontSize: 12, color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Total estimation</Text>
+                                    <Text style={{ fontSize: 22, fontWeight: '800', color: '#1e293b' }}>₹{estimation}</Text>
                                 </View>
                                 <TouchableOpacity 
-                                    style={{ backgroundColor: '#0f172a', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                                    style={{ backgroundColor: '#0f172a', width: '100%', paddingVertical: 14, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}
                                     onPress={() => setPaymentModalVisible(true)}
                                 >
-                                    <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>Secure Payment & Book</Text>
-                                    <Ionicons name="lock-closed" size={14} color="white" />
+                                    <Text style={{ color: 'white', fontSize: 15, fontWeight: '700' }}>Secure Payment & Book</Text>
+                                    <Ionicons name="lock-closed" size={16} color="white" />
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -4759,7 +4759,7 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     miniPetTabActive: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
     },
     miniPetTabText: {
         fontSize: 13,
@@ -4784,8 +4784,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
     },
     portionOptionFeederActive: {
-        borderColor: '#3b82f6',
-        backgroundColor: '#eff6ff',
+        borderColor: '#4f46e5',
+        backgroundColor: '#f5f3ff',
     },
     portionOptionTitle: {
         fontWeight: 'bold',
@@ -4793,7 +4793,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     portionOptionTitleActive: {
-        color: '#3b82f6',
+        color: '#4f46e5',
     },
     portionOptionGrams: {
         fontSize: 12,
@@ -4801,14 +4801,14 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     btnFeedNowFeeder: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#4f46e5',
         paddingVertical: 15,
         borderRadius: 16,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
-        shadowColor: '#3b82f6',
+        shadowColor: '#4f46e5',
         shadowOpacity: 0.3,
         shadowOffset: { width: 0, height: 4 },
         elevation: 4,

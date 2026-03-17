@@ -1,5 +1,5 @@
 <?php
-error_reporting(0); // Prevent any warnings/notices from breaking JSON
+// error_reporting(0); // Prevent any warnings/notices from breaking JSON
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
@@ -24,7 +24,7 @@ try {
         $res = $stmt->get_result();
         if ($row = $res->fetch_assoc()) {
             $response["last_feed"] = [
-                "time" => date('M d, g:i A', strtotime($row['fed_at'])),
+                "time" => date('h:i A', strtotime($row['fed_at'])),
                 "portion" => $row['portion'] . "g"
             ];
         } else {
@@ -33,7 +33,7 @@ try {
     } else {
         $response["last_feed"] = ["time" => "Not yet", "portion" => "--"];
     }
-} catch (Exception $e) {
+} catch (\Throwable $e) {
     $response["last_feed"] = ["time" => "Not yet", "portion" => "--"];
 }
 
@@ -51,14 +51,14 @@ try {
             $history[] = $row;
         }
     }
-} catch (Exception $e) {
+} catch (\Throwable $e) {
 }
 $response["history"] = $history;
 
 // 3. Get Active Schedules
 $schedules = [];
 try {
-    $scheduleStmt = $conn->prepare("SELECT s.id, s.user_id, s.pet_id, s.feeding_time, s.quantity_grams, s.mode, s.frequency, s.status, up.pet_name FROM smart_feeder_schedules s JOIN user_pets up ON s.pet_id = up.id WHERE s.user_id = ? AND s.status = 'Active' ORDER BY s.feeding_time ASC");
+    $scheduleStmt = $conn->prepare("SELECT s.id, s.user_id, s.pet_id, s.feeding_time, s.quantity_grams, s.mode, s.status, up.pet_name FROM smart_feeder_schedules s JOIN user_pets up ON s.pet_id = up.id WHERE s.user_id = ? AND s.status = 'Active' ORDER BY s.feeding_time ASC");
     if ($scheduleStmt) {
         $scheduleStmt->bind_param("i", $user_id);
         $scheduleStmt->execute();
@@ -69,7 +69,7 @@ try {
             $schedules[] = $row;
         }
     }
-} catch (Exception $e) {
+} catch (\Throwable $e) {
 }
 $response["schedules"] = $schedules;
 
