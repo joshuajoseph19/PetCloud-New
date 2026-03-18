@@ -8,11 +8,14 @@
       "distribution": "internal"
     },
     "preview": {
+      "channel": "main",
       "android": {
         "buildType": "apk"
       }
     },
-    "production": {}
+    "production": {
+      "channel": "main"
+    }
   },
   "submit": {
     "production": {}
