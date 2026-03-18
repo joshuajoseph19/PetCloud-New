@@ -1,20 +1,34 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+<<<<<<< HEAD
 
 // ====== YOUR WIFI (PHONE HOTSPOT) ======
 const char* WIFI_SSID = "RCT";
 const char* WIFI_PASS = "reibin123";
+=======
+#include <ESP32Servo.h>
+
+// ====== YOUR WIFI (PHONE HOTSPOT) ======
+const char* WIFI_SSID = "Wifi";
+const char* WIFI_PASS = "9428285177";
+>>>>>>> df926ef (new commit)
 
 // ====== YOUR RENDER URL (LIVE SERVER) ======
 String BASE = "https://petcloud-new.onrender.com/api";
 
+<<<<<<< HEAD
 // ====== SERVO (Native PWM Setup) ======
 // This avoids using the ESP32Servo library which has compilation bugs in newer cores
 const int SERVO_PIN = 13;
 const int servoChannel = 0;    // LEDC Channel
 const int servoFreq = 50;      // 50Hz for Servos
 const int servoRes = 13;       // 13-bit resolution (0-8191)
+=======
+// ====== SERVO ======
+Servo myservo;
+const int SERVO_PIN = 13;
+>>>>>>> df926ef (new commit)
 
 // ====== LED ======
 const int LED_PIN = 2;
@@ -23,6 +37,7 @@ const int LED_PIN = 2;
 unsigned long lastPingTime = 0;
 const unsigned long PING_INTERVAL = 30000; // Send heartbeat every 30 seconds
 
+<<<<<<< HEAD
 // ---- Native Servo Write (Replaces myservo.write) ----
 void servoWrite(int angle) {
   // Standard servos take a pulse between 0.5ms to 2.4ms
@@ -33,6 +48,8 @@ void servoWrite(int angle) {
   ledcWrite(servoChannel, duty);
 }
 
+=======
+>>>>>>> df926ef (new commit)
 // ---- Dispense logic (30/60/100 -> 1/2/3 drops) ----
 void doFeed(int portion) {
   int drops = 1;
@@ -50,6 +67,7 @@ void doFeed(int portion) {
     Serial.print("Drop number: ");
     Serial.println(i + 1);
 
+<<<<<<< HEAD
     servoWrite(0);
     delay(300);
 
@@ -57,6 +75,15 @@ void doFeed(int portion) {
     delay(600);
 
     servoWrite(0);
+=======
+    myservo.write(0);
+    delay(300);
+
+    myservo.write(90);
+    delay(600);
+
+    myservo.write(0);
+>>>>>>> df926ef (new commit)
     delay(300);
   }
 
@@ -143,16 +170,26 @@ void checkCommands() {
 void setup() {
   Serial.begin(115200);
   delay(1000);
+<<<<<<< HEAD
   Serial.println("PetCloud Smart Feeder (Native PWM) Booting...");
+=======
+  Serial.println("PetCloud Smart Feeder Booting...");
+>>>>>>> df926ef (new commit)
 
   // LED setup
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
+<<<<<<< HEAD
   // Initialize Native PWM for Servo (LEDC)
   ledcSetup(servoChannel, servoFreq, servoRes);
   ledcAttachPin(SERVO_PIN, servoChannel);
   servoWrite(0); // Move to initial position
+=======
+  // Servo attach
+  myservo.attach(SERVO_PIN);
+  myservo.write(0);
+>>>>>>> df926ef (new commit)
 
   // WiFi Setup
   WiFi.mode(WIFI_STA);

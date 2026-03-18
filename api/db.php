@@ -1,4 +1,5 @@
 <?php
+<<<<<<< HEAD
 $host = getenv('DB_HOST') ?: 'mysql-2f4ee15-mca-9b42.f.aivencloud.com';
 $user = getenv('DB_USER') ?: 'avnadmin';
 $pass = getenv('DB_PASS') ?: ''; // Add DB_PASS in Render dashboard env vars
@@ -17,6 +18,17 @@ if (!$conn->real_connect($host, $user, $pass, $db, $port, NULL, MYSQLI_CLIENT_SS
 
 if ($conn->connect_error) {
   die("DB connection failed: " . $conn->connect_error);
+=======
+$host = "localhost";
+$user = "root";
+$pass = "";
+$db = "petcloud_db";
+
+$conn = new mysqli($host, $user, $pass, $db);
+
+if ($conn->connect_error) {
+  die("DB connection failed");
+>>>>>>> df926ef (new commit)
 }
 
 date_default_timezone_set('Asia/Kolkata');
