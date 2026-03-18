@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "PetCloud",
+    "platforms": ["ios", "android"],
     "slug": "pet-cloud",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -24,9 +25,6 @@
         "backgroundColor": "#ffffff"
       }
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
     "extra": {
       "eas": {
         "projectId": "a487e4d7-e75a-413c-8f2c-a56ac2d49505"
@@ -34,6 +32,12 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a487e4d7-e75a-413c-8f2c-a56ac2d49505"
+    }
   }
 }
