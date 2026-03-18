@@ -1,7 +1,7 @@
 FROM php:8.2-apache
 
-# Install PDO MySQL extension for Aiven connection
-RUN docker-php-ext-install pdo pdo_mysql
+# Install PDO MySQL and MySQLi extensions
+RUN docker-php-ext-install pdo pdo_mysql mysqli
 
 # Enable Apache Mod Rewrite for .htaccess and pretty URLs
 RUN a2enmod rewrite

@@ -1,18 +1,20 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <ESP32Servo.h>
 
 // ====== YOUR WIFI (PHONE HOTSPOT) ======
-const char* WIFI_SSID = "Wifi";
-const char* WIFI_PASS = "9428285177";
+const char* WIFI_SSID = "RCT";
+const char* WIFI_PASS = "reibin123";
 
 // ====== YOUR RENDER URL (LIVE SERVER) ======
 String BASE = "https://petcloud-new.onrender.com/api";
 
-// ====== SERVO ======
-Servo myservo;
+// ====== SERVO (Native PWM Setup) ======
+// This avoids using the ESP32Servo library which has compilation bugs in newer cores
 const int SERVO_PIN = 13;
+const int servoChannel = 0;    // LEDC Channel
+const int servoFreq = 50;      // 50Hz for Servos
+const int servoRes = 13;       // 13-bit resolution (0-8191)
 
 // ====== LED ======
 const int LED_PIN = 2;
@@ -20,6 +22,16 @@ const int LED_PIN = 2;
 // ====== TIMING ======
 unsigned long lastPingTime = 0;
 const unsigned long PING_INTERVAL = 30000; // Send heartbeat every 30 seconds
+
+// ---- Native Servo Write (Replaces myservo.write) ----
+void servoWrite(int angle) {
+  // Standard servos take a pulse between 0.5ms to 2.4ms
+  // At 50Hz (20ms period) and 13-bit resolution:
+  // 0.5ms = ~205 units (0 degrees)
+  // 2.4ms = ~983 units (180 degrees)
+  int duty = map(angle, 0, 180, 205, 983);
+  ledcWrite(servoChannel, duty);
+}
 
 // ---- Dispense logic (30/60/100 -> 1/2/3 drops) ----
 void doFeed(int portion) {
@@ -38,13 +50,13 @@ void doFeed(int portion) {
     Serial.print("Drop number: ");
     Serial.println(i + 1);
 
-    myservo.write(0);
+    servoWrite(0);
     delay(300);
 
-    myservo.write(90);
+    servoWrite(90);
     delay(600);
 
-    myservo.write(0);
+    servoWrite(0);
     delay(300);
   }
 
@@ -131,15 +143,16 @@ void checkCommands() {
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("PetCloud Smart Feeder Booting...");
+  Serial.println("PetCloud Smart Feeder (Native PWM) Booting...");
 
   // LED setup
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
-  // Servo attach
-  myservo.attach(SERVO_PIN);
-  myservo.write(0);
+  // Initialize Native PWM for Servo (LEDC)
+  ledcSetup(servoChannel, servoFreq, servoRes);
+  ledcAttachPin(SERVO_PIN, servoChannel);
+  servoWrite(0); // Move to initial position
 
   // WiFi Setup
   WiFi.mode(WIFI_STA);
