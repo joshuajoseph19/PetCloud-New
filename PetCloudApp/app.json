@@ -1,7 +1,10 @@
 {
   "expo": {
     "name": "PetCloud",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "slug": "pet-cloud",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -27,7 +30,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "a487e4d7-e75a-413c-8f2c-a56ac2d49505"
+        "projectId": "4517b9e0-feb1-49c5-b4ac-8c596548fb45"
       }
     },
     "plugins": [
@@ -36,8 +39,6 @@
     "runtimeVersion": {
       "policy": "appVersion"
     },
-    "updates": {
-      "url": "https://u.expo.dev/a487e4d7-e75a-413c-8f2c-a56ac2d49505"
-    }
+    "updates": {}
   }
 }
