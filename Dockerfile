@@ -1,21 +1,16 @@
 FROM php:8.2-apache
 
-<<<<<<< HEAD
 # Install PDO MySQL and MySQLi extensions
 RUN docker-php-ext-install pdo pdo_mysql mysqli
-=======
-# Install PDO MySQL extension for Aiven connection
-RUN docker-php-ext-install pdo pdo_mysql
->>>>>>> df926ef (new commit)
 
-# Enable Apache Mod Rewrite for .htaccess and pretty URLs
+# Enable Apache Mod Rewrite
 RUN a2enmod rewrite
 
-# Copy project files into the Apache document root
+# Copy project files
 COPY . /var/www/html/
 
-# Set correct permissions
+# Set permissions
 RUN chown -R www-data:www-data /var/www/html/
 
-# Expose port 80
+# Expose port
 EXPOSE 80
