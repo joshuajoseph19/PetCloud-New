@@ -1074,6 +1074,14 @@ export default function App() {
     }, [activeItem]);
 
     useEffect(() => {
+        if (activeItem === 'Smart Feeder' && user) {
+            fetchFeederData();
+            const interval = setInterval(fetchFeederData, 15000);
+            return () => clearInterval(interval);
+        }
+    }, [activeItem, user]);
+
+    useEffect(() => {
         if (rehomingView === 'form' && user && !rehomingData.location) {
             setRehomingData(prev => ({
                 ...prev,
