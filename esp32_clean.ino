@@ -1,151 +1,183 @@
 #include <WiFi.h>
-#include <WiFiClientSecure.h>
-#include <PubSubClient.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
 #include <ESP32Servo.h>
 
-// ===== WIFI =====
-const char* WIFI_SSID = "RCT";
-const char* WIFI_PASS = "reibin123";
+// ====== YOUR WIFI (PHONE HOTSPOT) ======
+const char* WIFI_SSID = "Wifi";
+const char* WIFI_PASS = "9428285177";
 
-// ===== HIVEMQ CLOUD =====
-const char* mqtt_server   = "1c596e0a7b50436a8d8a596c80265e05.s1.eu.hivemq.cloud";
-const int   mqtt_port     = 8883;
-const char* mqtt_user     = "joshu_a_19";
-const char* mqtt_password = "jj10JMHJPhj";
+// ====== YOUR RENDER URL (LIVE SERVER) ======
+String BASE = "https://petcloud-new.onrender.com/api";
 
-// ===== TOPICS =====
-const char* TOPIC_CMD    = "petcloud/feeder/esp32_1/cmd";
-const char* TOPIC_STATUS = "petcloud/feeder/esp32_1/status";
-
-// ===== OBJECTS =====
-WiFiClientSecure espClient;
-PubSubClient client(espClient);
+// ====== SERVO ======
 Servo myservo;
-
-// ===== PINS =====
 const int SERVO_PIN = 13;
-const int LED_PIN   = 2;
 
-// ===== FEED FUNCTION =====
-void doFeed(int drops) {
-  Serial.print("Feeding... Drops = ");
+// ====== LED ======
+const int LED_PIN = 2;
+
+// ====== TIMING ======
+unsigned long lastPingTime = 0;
+const unsigned long PING_INTERVAL = 30000; // Send heartbeat every 30 seconds
+
+// ---- Dispense logic (30/60/100 -> 1/2/3 drops) ----
+void doFeed(int portion) {
+  int drops = 1;
+  if (portion <= 30) drops = 1;
+  else if (portion <= 60) drops = 2;
+  else drops = 3;
+
+  Serial.print("Feeding drops: ");
   Serial.println(drops);
 
+  // Turn LED ON while feeding starts
   digitalWrite(LED_PIN, HIGH);
 
   for (int i = 0; i < drops; i++) {
-    myservo.write(0);    // closed
-    delay(400);
+    Serial.print("Drop number: ");
+    Serial.println(i + 1);
 
-    myservo.write(90);   // open
-    delay(700);
+    myservo.write(0);
+    delay(300);
 
-    myservo.write(0);    // close again
-    delay(400);
+    myservo.write(90);
+    delay(600);
+
+    myservo.write(0);
+    delay(300);
   }
 
+  // Turn LED OFF after feeding ends
   digitalWrite(LED_PIN, LOW);
-  client.publish(TOPIC_STATUS, "Feed completed", true);
 }
 
-// ===== MQTT MESSAGE CALLBACK =====
-void callback(char* topic, byte* payload, unsigned int length) {
-  String msg = "";
+// ---- Send Heartbeat to server (Ping) ----
+void sendPing() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  
+  HTTPClient http;
+  http.begin(BASE + "/device_ping.php");
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-  for (unsigned int i = 0; i < length; i++) {
-    msg += (char)payload[i];
-  }
+  // Identification for this specific feeder
+  String postData = "device_id=esp32_1";
+  
+  Serial.print("Sending Heartbeat... ");
+  int code = http.POST(postData);
+  Serial.println(code);
 
-  msg.trim();
-
-  Serial.print("Message arrived on topic: ");
-  Serial.println(topic);
-  Serial.print("Received message: ");
-  Serial.println(msg);
-
-  // Servo works ONLY when button sends one of these commands
-  if (msg == "FEED_30") {
-    doFeed(1);
-  }
-  else if (msg == "FEED_60") {
-    doFeed(2);
-  }
-  else if (msg == "FEED_100") {
-    doFeed(3);
-  }
-  else {
-    Serial.println("No valid button command received. Servo will not run.");
-  }
+  http.end();
 }
 
-// ===== WIFI CONNECT =====
-void connectWiFi() {
-  Serial.print("Connecting to WiFi");
+// ---- Mark command as done ----
+void markDone(int id) {
+  HTTPClient http;
+  http.begin(BASE + "/mark_done.php");
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
+  String postData = "id=" + String(id);
+  int code = http.POST(postData);
+
+  Serial.print("mark_done HTTP: ");
+  Serial.println(code);
+
+  http.end();
+}
+
+// ---- Check for pending feed commands ----
+void checkCommands() {
+  String url = BASE + "/get_command.php?device_id=esp32_1";
+  Serial.println("Checking commands: " + url);
+
+  HTTPClient http;
+  http.begin(url);
+
+  int httpCode = http.GET();
+  if (httpCode == 200) {
+    String payload = http.getString();
+    Serial.println("Payload: " + payload);
+
+    StaticJsonDocument<256> doc;
+    DeserializationError err = deserializeJson(doc, payload);
+
+    if (!err) {
+      bool ok = doc["ok"] | false;
+      if (ok) {
+        int id = doc["id"] | 0;
+        int portion = doc["portion"] | 0;
+
+        Serial.print("Feed Command Received - id=");
+        Serial.print(id);
+        Serial.print(" portion=");
+        Serial.println(portion);
+
+        doFeed(portion);
+        markDone(id);
+      } else {
+        Serial.println("No pending command.");
+      }
+    } else {
+      Serial.print("JSON parse error: ");
+      Serial.println(err.c_str());
+    }
+  } else {
+    Serial.print("HTTP Command Check Error: ");
+    Serial.println(httpCode);
+  }
+  http.end();
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println("PetCloud Smart Feeder Booting...");
+
+  // LED setup
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+
+  // Servo attach
+  myservo.attach(SERVO_PIN);
+  myservo.write(0);
+
+  // WiFi Setup
+  WiFi.mode(WIFI_STA);
+  Serial.println("Connecting to WiFi...");
   WiFi.begin(WIFI_SSID, WIFI_PASS);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
+    digitalWrite(LED_PIN, !digitalRead(LED_PIN)); // Blink while connecting
   }
 
-  Serial.println();
-  Serial.println("WiFi connected");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-}
-
-// ===== MQTT RECONNECT =====
-void reconnectMQTT() {
-  while (!client.connected()) {
-    Serial.print("Connecting to HiveMQ... ");
-
-    if (client.connect("PetCloud_ESP32", mqtt_user, mqtt_password, TOPIC_STATUS, 1, true, "Offline")) {
-      Serial.println("Connected");
-      client.publish(TOPIC_STATUS, "Online", true);
-      client.subscribe(TOPIC_CMD);
-      Serial.println("Subscribed to command topic");
-
-      digitalWrite(LED_PIN, HIGH);
-      delay(300);
-      digitalWrite(LED_PIN, LOW);
-    } else {
-      Serial.print("Failed, rc = ");
-      Serial.println(client.state());
-      Serial.println("Retrying in 5 seconds...");
-      delay(5000);
-    }
-  }
-}
-
-// ===== SETUP =====
-void setup() {
-  Serial.begin(115200);
-
-  pinMode(LED_PIN, OUTPUT);
+  Serial.println("\nWiFi connected!");
+  digitalWrite(LED_PIN, HIGH);
+  delay(2000);
   digitalWrite(LED_PIN, LOW);
-
-  myservo.setPeriodHertz(50);
-  myservo.attach(SERVO_PIN, 500, 2400);
-  myservo.write(0);   // keep closed initially
-
-  espClient.setInsecure(); // testing only
-
-  connectWiFi();
-
-  client.setServer(mqtt_server, mqtt_port);
-  client.setCallback(callback);
+  
+  // Send initial ping on boot
+  sendPing();
+  lastPingTime = millis();
 }
 
-// ===== LOOP =====
 void loop() {
-  if (WiFi.status() != WL_CONNECTED) {
-    connectWiFi();
+  if (WiFi.status() == WL_CONNECTED) {
+    unsigned long currentMillis = millis();
+
+    // 1. Send Heartbeat (Ping) every 30 seconds
+    if (currentMillis - lastPingTime >= PING_INTERVAL) {
+      sendPing();
+      lastPingTime = currentMillis;
+    }
+
+    // 2. Check for commands every 3 seconds
+    checkCommands();
+  } else {
+    Serial.println("WiFi disconnected. Reconnecting...");
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
   }
 
-  if (!client.connected()) {
-    reconnectMQTT();
-  }
-
-  client.loop();
+  delay(3000); 
 }

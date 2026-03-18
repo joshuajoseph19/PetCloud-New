@@ -429,90 +429,9 @@ try {
             </div>
         </main>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
+
     <script>
-        // MQTT CONFIGURATION (HiveMQ Cloud)
-        const MQTT_BROKER = "1c596e0a7b50436a8d8a596c80265e05.s1.eu.hivemq.cloud";
-        const MQTT_PORT = 8884; // WebSocket SSL port for HiveMQ Cloud
-        const MQTT_USER = "joshu_a_19";
-        const MQTT_PASS = "jj10JMHJPhj";
-        const DEVICE_ID = "esp32_1";
-        const CLIENT_ID = "PetCloud_Dashboard_" + Math.random().toString(16).substr(2, 8);
 
-        // Topics (Must match exactly)
-        const TOPIC_STATUS = `petcloud/feeder/${DEVICE_ID}/status`;
-        const TOPIC_CMD = `petcloud/feeder/${DEVICE_ID}/cmd`;
-
-        const mqttClient = new Paho.MQTT.Client(MQTT_BROKER, Number(MQTT_PORT), CLIENT_ID);
-
-        mqttClient.onConnectionLost = (responseObject) => {
-            console.log("MQTT Connection Lost:", responseObject.errorMessage);
-            updateStatusUI("Offline");
-        };
-
-        mqttClient.onMessageArrived = (message) => {
-            console.log("MQTT Message Arrived:", message.destinationName, message.payloadString);
-            
-            if (message.destinationName === TOPIC_STATUS) {
-                updateStatusUI(message.payloadString);
-                
-                // If feed completed message arrives
-                if (message.payloadString === "Feed completed") {
-                    this.dispatchEvent(new CustomEvent('feedAcknowledged'));
-                }
-            }
-        };
-
-        function connectMQTT() {
-            mqttClient.connect({
-                onSuccess: () => {
-                    console.log("Connected to HiveMQ Cloud");
-                    mqttClient.subscribe(TOPIC_STATUS);
-                },
-                onFailure: (err) => {
-                    console.error("MQTT Connection Failed:", err);
-                },
-                userName: MQTT_USER,
-                password: MQTT_PASS,
-                useSSL: true, // Required for HiveMQ Cloud
-                keepAliveInterval: 30
-            });
-        }
-
-        function updateStatusUI(status) {
-            const badge = document.getElementById('deviceStatusBadge');
-            const label = document.getElementById('deviceStatusText');
-            if (badge && label) {
-                const isOnline = status.toLowerCase() === 'online' || status.includes('feed');
-                label.innerText = status.toUpperCase();
-                badge.classList.toggle('offline', !isOnline);
-            }
-        }
-
-        connectMQTT();
-
-        // Overwrite Manual Feed Button to use HiveMQ command strings
-        document.getElementById('feedBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            const portion = document.querySelector('input[name="quantity"]:checked').value;
-
-            // Command strings MUST match the ESP32 code: FEED_30, FEED_60, FEED_100
-            const commandString = "FEED_" + portion;
-
-            const message = new Paho.MQTT.Message(commandString);
-            message.destinationName = TOPIC_CMD;
-            mqttClient.send(message);
-
-            // Visual feedback
-            const originalHTML = this.innerHTML;
-            this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> DISPENSING...';
-            this.disabled = true;
-            
-            setTimeout(() => {
-                this.innerHTML = originalHTML;
-                this.disabled = false;
-            }, 3000); // Give it some time
-        });
 
         // Alarm System Integration
         const schedules = <?php echo json_encode($activeSchedules); ?>;
@@ -533,8 +452,25 @@ try {
         }
         setInterval(checkAlarms, 10000);
 
-        // Remove old polling
-        // pollDeviceStatus is no longer needed with MQTT
+        // Live Device Status Poller — checks every 15 seconds
+        function pollDeviceStatus() {
+            fetch('api/device_status.php?device_id=esp32_1')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.ok) {
+                        const badge  = document.getElementById('deviceStatusBadge');
+                        const label  = document.getElementById('deviceStatusText');
+                        const isOnline = data.status === 'Online';
+                        if (badge && label) {
+                            label.innerText = data.status.toUpperCase();
+                            badge.classList.toggle('offline', !isOnline);
+                        }
+                    }
+                })
+                .catch(err => console.error('Status poll error:', err));
+        }
+        pollDeviceStatus(); // run once on load
+        setInterval(pollDeviceStatus, 15000); // then every 15s
     </script>
     <script>
         // Portion Selection Logic
@@ -556,14 +492,19 @@ try {
                         if (data.fed_at) {
                             document.getElementById('lastFedText').innerText = `Last fed: ${data.fed_at}`;
                             document.getElementById('lastPortionText').innerText = `Last portion: ${data.portion}g`;
+                        } else {
+                            document.getElementById('lastFedText').innerText = 'Last fed: Not yet';
+                            document.getElementById('lastPortionText').innerText = 'Last portion: --';
                         }
                     }
                 })
                 .catch(err => console.error('Error fetching last feed:', err));
         }
+
+        // Fetch on load, then every 5 seconds
         fetchLastFeed();
+        setInterval(fetchLastFeed, 5000);
     </script>
 </body>
 
 </html>
-/html>
