@@ -4,7 +4,7 @@ $host = getenv('DB_HOST') ?: 'mysql-2f4ee15-mca-9b42.f.aivencloud.com';
 $port = getenv('DB_PORT') ?: '17032';
 $dbname = getenv('DB_NAME') ?: 'defaultdb';
 $username = getenv('DB_USER') ?: 'avnadmin';
-$password = getenv('DB_PASS') ?: ''; // NEVER hardcode passwords in the repo
+$password = getenv('DB_PASS') ?: ''; // Add DB_PASS in Render dashboard env vars
 
 try {
     // Create PDO connection with Port and SSL
