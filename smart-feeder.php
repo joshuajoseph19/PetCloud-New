@@ -68,8 +68,21 @@ $scheduleStmt = $pdo->prepare("SELECT s.*, up.pet_name FROM smart_feeder_schedul
 $scheduleStmt->execute([$user_id]);
 $activeSchedules = $scheduleStmt->fetchAll();
 
-// Simulated IoT Status
-$deviceStatus = "Online";
+// Real IoT Status — Online if last heartbeat was within 60 seconds
+$deviceStatus = "Offline"; // Default to Offline
+try {
+    $hbStmt = $pdo->prepare(
+        "SELECT TIMESTAMPDIFF(SECOND, last_seen, NOW()) AS seconds_ago
+         FROM device_heartbeats WHERE device_id = 'esp32_1' LIMIT 1"
+    );
+    $hbStmt->execute();
+    if ($hbRow = $hbStmt->fetch()) {
+        $deviceStatus = ($hbRow['seconds_ago'] <= 60) ? "Online" : "Offline";
+    }
+} catch (PDOException $e) {
+    // Table doesn't exist yet — stays Offline until migration is run
+    $deviceStatus = "Offline";
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -279,8 +292,8 @@ $deviceStatus = "Online";
                                     <h3 class="section-title" style="margin-bottom: 0.25rem;">Feeder Terminal</h3>
                                     <p style="color: var(--text-muted); font-size: 0.9rem;">Direct hardware control</p>
                                 </div>
-                                <div class="status-badge">
-                                    <div class="dot"></div> ONLINE
+                                <div class="status-badge <?php echo $deviceStatus === 'Online' ? '' : 'offline'; ?>" id="deviceStatusBadge">
+                                    <div class="dot"></div> <span id="deviceStatusText"><?php echo strtoupper($deviceStatus); ?></span>
                                 </div>
                             </div>
 
@@ -438,6 +451,26 @@ $deviceStatus = "Online";
             });
         }
         setInterval(checkAlarms, 10000);
+
+        // Live Device Status Poller — checks every 15 seconds
+        function pollDeviceStatus() {
+            fetch('api/device_status.php?device_id=esp32_1')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.ok) {
+                        const badge  = document.getElementById('deviceStatusBadge');
+                        const label  = document.getElementById('deviceStatusText');
+                        const isOnline = data.status === 'Online';
+                        if (badge && label) {
+                            label.innerText = data.status.toUpperCase();
+                            badge.classList.toggle('offline', !isOnline);
+                        }
+                    }
+                })
+                .catch(err => console.error('Status poll error:', err));
+        }
+        pollDeviceStatus(); // run once on load
+        setInterval(pollDeviceStatus, 15000); // then every 15s
     </script>
     <script>
         // Portion Selection Logic

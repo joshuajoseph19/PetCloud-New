@@ -68,5 +68,21 @@ try {
 }
 $response["schedules"] = $schedules;
 
+// 4. Real Device Status — Online if last heartbeat was within 60 seconds
+$device_status = "Offline";
+try {
+    $hbStmt = $pdo->prepare(
+        "SELECT TIMESTAMPDIFF(SECOND, last_seen, NOW()) AS seconds_ago
+         FROM device_heartbeats WHERE device_id = 'esp32_1' LIMIT 1"
+    );
+    $hbStmt->execute();
+    if ($hbRow = $hbStmt->fetch(PDO::FETCH_ASSOC)) {
+        $device_status = ((int)$hbRow['seconds_ago'] <= 60) ? "Online" : "Offline";
+    }
+} catch (\Throwable $e) {
+    // Table doesn't exist yet — stays Offline
+}
+$response["device_status"] = $device_status;
+
 echo json_encode($response);
 ?>

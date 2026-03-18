@@ -102,7 +102,7 @@ export default function App() {
     const [ordersLoading, setOrdersLoading] = useState(false);
 
     // Smart Feeder State
-    const [feederStatus, setFeederStatus] = useState('Online');
+    const [feederStatus, setFeederStatus] = useState('Offline');
     const [selectedPortion, setSelectedPortion] = useState('Medium'); // Small, Medium, Large
     const [feederData, setFeederData] = useState({ last_feed: { time: '--', portion: '--' }, history: [], schedules: [] });
     const [feederLoading, setFeederLoading] = useState(false);
@@ -478,6 +478,10 @@ export default function App() {
             const data = await response.json();
             if (data.ok) {
                 setFeederData(data);
+                // Update real device status from heartbeat
+                if (data.device_status) {
+                    setFeederStatus(data.device_status);
+                }
                 if (data.history && data.history.length > 0 && !selectedFeederPetId) {
                     setSelectedFeederPetId(data.history[0].pet_id);
                 } else if (userPets.length > 0 && !selectedFeederPetId) {
@@ -2262,9 +2266,9 @@ export default function App() {
                                             <Text style={styles.feederCardTitle}>Feeder Terminal</Text>
                                             <Text style={styles.feederCardSubtitle}>Direct hardware control</Text>
                                         </View>
-                                        <View style={styles.statusBadgeGreen}>
-                                            <View style={styles.dotGreen} />
-                                            <Text style={styles.statusTextGreen}>ONLINE</Text>
+                                        <View style={feederStatus === 'Online' ? styles.statusBadgeGreen : styles.statusBadgeRed}>
+                                            <View style={feederStatus === 'Online' ? styles.dotGreen : styles.dotRed} />
+                                            <Text style={feederStatus === 'Online' ? styles.statusTextGreen : styles.statusTextRed}>{feederStatus.toUpperCase()}</Text>
                                         </View>
                                     </View>
 
@@ -4729,16 +4733,36 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         gap: 6,
     },
+    statusBadgeRed: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fef2f2',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 20,
+        gap: 6,
+    },
     dotGreen: {
         width: 6,
         height: 6,
         borderRadius: 3,
         backgroundColor: '#10b981',
     },
+    dotRed: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#ef4444',
+    },
     statusTextGreen: {
         fontSize: 10,
         fontWeight: 'bold',
         color: '#10b981',
+    },
+    statusTextRed: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: '#ef4444',
     },
     feederStatusRow: {
         flexDirection: 'row',
