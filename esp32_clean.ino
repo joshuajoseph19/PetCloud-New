@@ -7,9 +7,8 @@
 const char* WIFI_SSID = "Wifi";
 const char* WIFI_PASS = "9428285177";
 
-// ====== YOUR PC IP (XAMPP SERVER) ======
-// PC must be connected to SAME hotspot, and IP may change.
-String BASE = "http://192.168.1.8/PetCloud/api";
+// ====== YOUR RENDER URL (LIVE SERVER) ======
+String BASE = "https://petcloud-new.onrender.com/api";
 
 // ====== SERVO ======
 Servo myservo;
@@ -17,6 +16,10 @@ const int SERVO_PIN = 13;
 
 // ====== LED ======
 const int LED_PIN = 2;
+
+// ====== TIMING ======
+unsigned long lastPingTime = 0;
+const unsigned long PING_INTERVAL = 30000; // Send heartbeat every 30 seconds
 
 // ---- Dispense logic (30/60/100 -> 1/2/3 drops) ----
 void doFeed(int portion) {
@@ -49,6 +52,24 @@ void doFeed(int portion) {
   digitalWrite(LED_PIN, LOW);
 }
 
+// ---- Send Heartbeat to server (Ping) ----
+void sendPing() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  
+  HTTPClient http;
+  http.begin(BASE + "/device_ping.php");
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+  // Identification for this specific feeder
+  String postData = "device_id=esp32_1";
+  
+  Serial.print("Sending Heartbeat... ");
+  int code = http.POST(postData);
+  Serial.println(code);
+
+  http.end();
+}
+
 // ---- Mark command as done ----
 void markDone(int id) {
   HTTPClient http;
@@ -64,10 +85,53 @@ void markDone(int id) {
   http.end();
 }
 
+// ---- Check for pending feed commands ----
+void checkCommands() {
+  String url = BASE + "/get_command.php?device_id=esp32_1";
+  Serial.println("Checking commands: " + url);
+
+  HTTPClient http;
+  http.begin(url);
+
+  int httpCode = http.GET();
+  if (httpCode == 200) {
+    String payload = http.getString();
+    Serial.println("Payload: " + payload);
+
+    StaticJsonDocument<256> doc;
+    DeserializationError err = deserializeJson(doc, payload);
+
+    if (!err) {
+      bool ok = doc["ok"] | false;
+      if (ok) {
+        int id = doc["id"] | 0;
+        int portion = doc["portion"] | 0;
+
+        Serial.print("Feed Command Received - id=");
+        Serial.print(id);
+        Serial.print(" portion=");
+        Serial.println(portion);
+
+        doFeed(portion);
+        markDone(id);
+      } else {
+        Serial.println("No pending command.");
+      }
+    } else {
+      Serial.print("JSON parse error: ");
+      Serial.println(err.c_str());
+    }
+  } else {
+    Serial.print("HTTP Command Check Error: ");
+    Serial.println(httpCode);
+  }
+  http.end();
+}
+
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("Booting...");
+  Serial.println("PetCloud Smart Feeder Booting...");
 
   // LED setup
   pinMode(LED_PIN, OUTPUT);
@@ -77,101 +141,43 @@ void setup() {
   myservo.attach(SERVO_PIN);
   myservo.write(0);
 
-  // Clean WiFi reset
-  WiFi.mode(WIFI_MODE_NULL);
-  delay(500);
-  WiFi.disconnect(true, true);
-  delay(1000);
-
+  // WiFi Setup
   WiFi.mode(WIFI_STA);
-  delay(500);
-
   Serial.println("Connecting to WiFi...");
   WiFi.begin(WIFI_SSID, WIFI_PASS);
 
-  unsigned long start = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - start < 20000) {
+  while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
-    
-    // Optional blink while connecting
-    digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+    digitalWrite(LED_PIN, !digitalRead(LED_PIN)); // Blink while connecting
   }
 
-  Serial.println();
-  Serial.print("WiFi status: ");
-  Serial.println(WiFi.status());
-
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("WiFi connected!");
-    Serial.print("ESP32 IP: ");
-    Serial.println(WiFi.localIP());
-
-    // LED ON for 1 second when WiFi connected
-    digitalWrite(LED_PIN, HIGH);
-    delay(1000);
-    digitalWrite(LED_PIN, LOW);
-  } else {
-    Serial.println("WiFi FAILED (check SSID/PASS or 2.4GHz hotspot)");
-
-    // Blink LED 5 times if WiFi fails
-    for (int i = 0; i < 5; i++) {
-      digitalWrite(LED_PIN, HIGH);
-      delay(200);
-      digitalWrite(LED_PIN, LOW);
-      delay(200);
-    }
-  }
+  Serial.println("\nWiFi connected!");
+  digitalWrite(LED_PIN, HIGH);
+  delay(2000);
+  digitalWrite(LED_PIN, LOW);
+  
+  // Send initial ping on boot
+  sendPing();
+  lastPingTime = millis();
 }
 
 void loop() {
   if (WiFi.status() == WL_CONNECTED) {
-    String url = BASE + "/get_command.php?device_id=esp32_1";
-    Serial.println("Checking: " + url);
+    unsigned long currentMillis = millis();
 
-    HTTPClient http;
-    http.begin(url);
-
-    int httpCode = http.GET();
-    Serial.print("HTTP code: ");
-    Serial.println(httpCode);
-
-    if (httpCode == 200) {
-      String payload = http.getString();
-      Serial.println("Payload: " + payload);
-
-      StaticJsonDocument<256> doc;
-      DeserializationError err = deserializeJson(doc, payload);
-
-      if (!err) {
-        bool ok = doc["ok"] | false;
-
-        if (ok) {
-          int id = doc["id"] | 0;
-          int portion = doc["portion"] | 0;
-
-          Serial.print("Feed Command Received - id=");
-          Serial.print(id);
-          Serial.print(" portion=");
-          Serial.println(portion);
-
-          doFeed(portion);
-          markDone(id);
-        } else {
-          Serial.println("No pending command.");
-        }
-      } else {
-        Serial.print("JSON parse error: ");
-        Serial.println(err.c_str());
-      }
-    } else {
-      Serial.println("HTTP request failed.");
+    // 1. Send Heartbeat (Ping) every 30 seconds
+    if (currentMillis - lastPingTime >= PING_INTERVAL) {
+      sendPing();
+      lastPingTime = currentMillis;
     }
 
-    http.end();
+    // 2. Check for commands every 3 seconds
+    checkCommands();
   } else {
-    Serial.println("WiFi disconnected.");
+    Serial.println("WiFi disconnected. Reconnecting...");
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
   }
 
-  delay(3000); // poll every 3 seconds
+  delay(3000); 
 }
