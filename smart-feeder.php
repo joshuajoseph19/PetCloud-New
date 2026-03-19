@@ -17,25 +17,30 @@ try {
     include 'setup_smart_feeder_db.php';
 }
 
-// Handle Manual Feeding Simulation
-if (isset($_POST['action']) && $_POST['action'] === 'manual_feed') {
-    $pet_id = $_POST['pet_id'];
-    $qty = $_POST['quantity'];
-
-    // 1) Update dashboard "Recent Activity" (feeding_logs)
-    $stmt = $pdo->prepare("INSERT INTO feeding_logs (user_id, pet_id, quantity_grams, status, message) VALUES (?, ?, ?, 'Success', 'Manual feeding triggered from dashboard')");
-    $stmt->execute([$user_id, $pet_id, $qty]);
-
-    // 2) Send command to ESP32 (feed_commands)
+// AJAX Feed Now Handler — called by fetch() from the Feed Now button
+if (isset($_POST['action']) && $_POST['action'] === 'manual_feed' && isset($_POST['ajax'])) {
+    header('Content-Type: application/json');
+    $pet_id = intval($_POST['pet_id'] ?? 0);
+    $qty    = intval($_POST['quantity'] ?? 30);
     $device_id = 'esp32_1';
-    $stmtCmd = $pdo->prepare("INSERT INTO feed_commands (device_id, portion_qty, status) VALUES (?, ?, 'pending')");
-    $stmtCmd->execute([$device_id, $qty]);
 
-    // 3) Update "Last fed" display immediately (feed_logs)
-    $stmtFeedLog = $pdo->prepare("INSERT INTO feed_logs (device_id, `portion`) VALUES (?, ?)");
-    $stmtFeedLog->execute([$device_id, $qty]);
+    try {
+        // 1) Log to feeding_logs (Recent Activity on dashboard)
+        $s1 = $pdo->prepare("INSERT INTO feeding_logs (user_id, pet_id, quantity_grams, status, message) VALUES (?, ?, ?, 'Success', 'Manual feeding triggered from dashboard')");
+        $s1->execute([$user_id, $pet_id, $qty]);
 
-    header("Location: smart-feeder.php?msg=manual_success");
+        // 2) Queue command for ESP32
+        $s2 = $pdo->prepare("INSERT INTO feed_commands (device_id, portion_qty, status) VALUES (?, ?, 'pending')");
+        $s2->execute([$device_id, $qty]);
+
+        // 3) Update Last Fed display
+        $s3 = $pdo->prepare("INSERT INTO feed_logs (device_id, `portion`) VALUES (?, ?)");
+        $s3->execute([$device_id, $qty]);
+
+        echo json_encode(['ok' => true]);
+    } catch (Exception $e) {
+        echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+    }
     exit();
 }
 
@@ -105,6 +110,34 @@ try {
             --text-main: #1e293b;
             --text-muted: #64748b;
         }
+
+        /* ── Toast Notification ── */
+        #feedToast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #1e293b;
+            color: #fff;
+            padding: 1rem 1.75rem;
+            border-radius: 1rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            transition: transform 0.4s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
+            opacity: 0;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        #feedToast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        #feedToast.success { border-left: 4px solid #10b981; }
+        #feedToast.error   { border-left: 4px solid #ef4444; }
 
         .feeder-grid {
             display: grid;
@@ -348,8 +381,9 @@ try {
 
 
 
-                                <button type="submit" class="btn-feed" id="feedBtn">
-                                    <i class="fa-solid fa-bolt"></i> FEED NOW
+                                <button type="button" class="btn-feed" id="feedBtn" onclick="feedNow()">
+                                    <i class="fa-solid fa-bolt" id="feedIcon"></i>
+                                    <span id="feedBtnText">FEED NOW</span>
                                 </button>
                             </form>
                         </div>
@@ -429,6 +463,61 @@ try {
             </div>
         </main>
     </div>
+
+    <!-- Toast Element -->
+    <div id="feedToast"></div>
+
+    <script>
+    // ── Feed Now (AJAX — no page reload) ─────────────────────────────
+    function showToast(msg, type) {
+        const t = document.getElementById('feedToast');
+        t.className = 'show ' + type;
+        t.innerHTML = (type === 'success'
+            ? '<i class="fa-solid fa-circle-check" style="color:#10b981"></i> '
+            : '<i class="fa-solid fa-circle-xmark" style="color:#ef4444"></i> ') + msg;
+        clearTimeout(window._toastTimer);
+        window._toastTimer = setTimeout(() => { t.className = ''; }, 4000);
+    }
+
+    function feedNow() {
+        const btn      = document.getElementById('feedBtn');
+        const btnText  = document.getElementById('feedBtnText');
+        const btnIcon  = document.getElementById('feedIcon');
+        const petId    = document.querySelector('select[name="pet_id"]').value;
+        const quantity = document.querySelector('input[name="quantity"]:checked')?.value || '30';
+
+        // Loading state
+        btn.disabled = true;
+        btnIcon.className = 'fa-solid fa-spinner fa-spin';
+        btnText.textContent = 'Sending...';
+
+        const body = new URLSearchParams({
+            action:   'manual_feed',
+            ajax:     '1',
+            pet_id:   petId,
+            quantity: quantity
+        });
+
+        fetch('smart-feeder.php', { method: 'POST', body })
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok) {
+                    showToast('Command sent! Your pet will be fed in ~3 seconds ✅', 'success');
+                    fetchLastFeed(); // immediately refresh Last Fed display
+                } else {
+                    showToast('Failed to send command. Try again.', 'error');
+                }
+            })
+            .catch(() => showToast('Network error. Check your connection.', 'error'))
+            .finally(() => {
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btnIcon.className = 'fa-solid fa-bolt';
+                    btnText.textContent = 'FEED NOW';
+                }, 3000);
+            });
+    }
+    </script>
 
     <script>
 
